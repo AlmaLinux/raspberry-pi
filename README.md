@@ -18,7 +18,7 @@ I tried this all on a Raspberry Pi 4.
 
 2. `resizepart 3` will resize your partition. When it asked for the end I just did 128GB which was from the output of the earlier `print free` command. Make sure to `quit` to save your changes.
 
-3. Run `resize2fs /dev/mmblk0p3` and then `df -h` and you should now see you have more room to download packages to your hearts content.
+3. Run `resize2fs /dev/mmcblk0p3` and then `df -h` and you should now see you have more room to download packages to your hearts content.
 
 **Bonus Round**: Getting GNOME working.
 **NOTE**: If you enable GNOME, networking will need to reconfigured. See https://github.com/raspberrypi/linux/issues/4393
