@@ -6,19 +6,13 @@ Hot on the heels of our aarch64 release a couple of days ago, we've got an image
 
 I tried this all on a Raspberry Pi 4.
 
-**Step 1**: [Grab the image](https://repo.almalinux.org/rpi/images/AlmaLinux-8-aarch64-RaspberryPI-Minimal-4-sda.raw.xz), verify the [CHECKSUM](https://repo.almalinux.org/rpi/images/CHECKSUM) and burn it to an SD card using Fedora Media Writer, Balena, RPi Image, dd or whatever tool you choose.
+**Step 1**: [Grab the image](https://repo.almalinux.org/rpi/images/AlmaLinux-8-RaspberryPi-latest.aarch64.raw.xz), verify the [CHECKSUM](https://repo.almalinux.org/rpi/images/CHECKSUM) and burn it to an SD card using Fedora Media Writer, Balena, RPi Image, dd or whatever tool you choose.
 
-**Step 2**: Boot. I didn't try to configure wi-fi, but ethernet works for me. I have a PoE hat for my Pi as well so no need for external power.
+**Step 2**: Boot. Both wi-fi and ethernet work for me. I have a PoE hat for my Pi as well so no need for external power.
 
 **Step 3**: Login. The user is `root` password is `almalinux`.
 
-**Step 4**: Since the `rpi-` utilities aren't around yet, it won't resize our rootfs, so we have to do this manually. I have a 128GB SD Card:
-
-1. Go into `parted` and run `print free`. That will give you the partition list and sizes including free space. The rootfs lives on the 3rd partition `/dev/mmcblk0p3`.
-
-2. `resizepart 3` will resize your partition. When it asked for the end I just did 128GB which was from the output of the earlier `print free` command. Make sure to `quit` to save your changes.
-
-3. Run `resize2fs /dev/mmcblk0p3` and then `df -h` and you should now see you have more room to download packages to your hearts content.
+**Step 4**: Resize your root filesystem by running `rootfs-expand`.
 
 **Bonus Round**: Getting GNOME working.
 **NOTE**: If you enable GNOME, networking will need to reconfigured. See https://github.com/raspberrypi/linux/issues/4393
