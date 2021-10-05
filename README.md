@@ -15,7 +15,6 @@ I tried this all on a Raspberry Pi 4.
 **Step 4**: Resize your root filesystem by running `rootfs-expand`.
 
 **Bonus Round**: Getting GNOME working.
-**NOTE**: If you enable GNOME, networking will need to reconfigured. See https://github.com/raspberrypi/linux/issues/4393
 
 [![asciicast](https://asciinema.org/a/423622.svg)](https://asciinema.org/a/423622)
 
