@@ -1,6 +1,10 @@
+###### tags: `published`
+
 # AlmaLinux Official Raspberry Pi Image
 
 [![asciicast](https://asciinema.org/a/423618.svg)](https://asciinema.org/a/423618)
+
+Last Update 2021-10-05: [Changelog](#changelog) below.
 
 This repository is the home of the Official AlmaLinux Raspberry Pi Image.
 
@@ -43,3 +47,11 @@ Please file any bugs on https://bugs.almalinux.org and feel free to discuss on o
 **Step 4**: Success!
 
 [![GNOME Desktop on AlmaLinux on Raspberry Pi](https://res.cloudinary.com/marcomontalbano/image/upload/v1625268695/video_to_markdown/images/youtube--HbPRKJrYFbQ-c05b58ac6eb4c4700831b2b3070cd403.jpg)](https://youtu.be/HbPRKJrYFbQ "GNOME Desktop on AlmaLinux on Raspberry Pi")
+
+## Changelog
+2021-10-05
+- Relocated images, added kernels and release packages to RPi-specific repository
+- Updated Kernel to version 5.10.60
+- Fixed Wi-Fi via an updated `linux-firmware` package to include Matthias Brugger's <mbrugger@suse.com> fix for Raspberry Pi
+- Include Fabian Arrotin's <arrfab@centos.org> `rootfs-expand`
+- Reduced swap size to 100MB to match Raspberry Pi OS
