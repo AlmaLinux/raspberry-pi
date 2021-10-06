@@ -1,5 +1,3 @@
-###### tags: `published`
-
 # AlmaLinux Official Raspberry Pi Image
 
 [![asciicast](https://asciinema.org/a/423618.svg)](https://asciinema.org/a/423618)
