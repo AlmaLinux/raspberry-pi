@@ -36,7 +36,7 @@ Please file any bugs on https://bugs.almalinux.org and feel free to discuss on o
 
 [![asciicast](https://asciinema.org/a/423622.svg)](https://asciinema.org/a/423622)
 
-**Step 1**: Use `dnf groupinstall gnome-desktop`, this will install just `Gnome GUI` bare bone, you may have to install additional packages for as you need. Use `dnf groupinstall "Server with GUI"`, comes with GUI and server utils.
+**Step 1**: Use `dnf groupinstall gnome-desktop`, this will install just `Gnome GUI` barebone, you may have to install additional packages for as you need. Use `dnf groupinstall "Server with GUI"`, comes with GUI and server utils.
 
 **Step 2**: `systemctl set-default graphical`
 
