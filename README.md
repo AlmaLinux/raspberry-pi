@@ -36,7 +36,7 @@ Please file any bugs on https://bugs.almalinux.org and feel free to discuss on o
 
 [![asciicast](https://asciinema.org/a/423622.svg)](https://asciinema.org/a/423622)
 
-**Step 1**: Use `dnf groupinstall gnome-desktop`, this will install just `Gnome GUI` barebone, you may have to install additional packages for as you need (350MB download, 1.1GB installed). Use `dnf groupinstall "Server with GUI"`, comes with GUI and server utils (890MB download, 2.4GB installed).
+**Step 1**: If you'd like to install just a barebones `GNOME` desktop environment use `dnf groupinstall gnome-desktop` (350MB download, 1.1GB installed). You may have to install additional packages as needed. If you'd like to install a more comprehensive GNOME environment then use `dnf groupinstall "Server with GUI"`. This comes with the GNOME GUI and server utils (890MB download, 2.4GB installed).
 
 **Step 2**: `systemctl set-default graphical`
 
