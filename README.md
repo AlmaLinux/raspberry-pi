@@ -46,6 +46,19 @@ Please file any bugs on https://bugs.almalinux.org and feel free to discuss on o
 
 [![GNOME Desktop on AlmaLinux on Raspberry Pi](https://res.cloudinary.com/marcomontalbano/image/upload/v1625268695/video_to_markdown/images/youtube--HbPRKJrYFbQ-c05b58ac6eb4c4700831b2b3070cd403.jpg)](https://youtu.be/HbPRKJrYFbQ "GNOME Desktop on AlmaLinux on Raspberry Pi")
 
+## After Installation
+If you installed a GUI, and your screen has a black border around it, apply this fix:
+
+**Step 1**: Open a terminal
+
+**Step 2**: `sudo nano /boot/config.txt`
+
+**Step 3**: Add the following line: `disable_overscan=1`
+
+**Step 4**: Type Ctrl+x on your keyboard to exit nano, and a little message at the bottom or the terminal will say, “save modified buffer?’. Type y for ‘yes’.
+
+**Step 5**: `reboot`
+
 ## Changelog
 2021-10-05
 - Relocated images, added kernels and release packages to RPi-specific repository
