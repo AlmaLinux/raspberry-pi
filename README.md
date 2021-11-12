@@ -2,11 +2,11 @@
 
 [![asciicast](https://asciinema.org/a/423618.svg)](https://asciinema.org/a/423618)
 
-Last Update 2021-10-05: [Changelog](#changelog) below.
+Last Update 2021-11-12: [Changelog](#changelog) below.
 
 This repository is the home of the Official AlmaLinux Raspberry Pi Image.
 
-Images made possible by the incredible work contributed by the immortal [Pablo Greco](https://github.com/psgreco), [Mark Verlinde](https://github.com/markVnl) and [Fabian Arrotin](https://github.com/arrfab). 
+Images made possible by the incredible work contributed by the immortal [Pablo Greco](https://github.com/psgreco), [Mark Verlinde](https://github.com/markVnl) and [Fabian Arrotin](https://github.com/arrfab).
 
 ## AlmaLinux Raspberry Pi Quick Start
 This has been tested on Raspberry Pi 3 and 4.
@@ -60,6 +60,10 @@ If you installed a GUI, and your screen has a black border around it, apply this
 **Step 5**: `reboot`
 
 ## Changelog
+2021-11-12
+- Updated to AlmaLinux 8.5
+- Updated Kernel to version 5.10.78
+
 2021-10-05
 - Relocated images, added kernels and release packages to RPi-specific repository
 - Updated Kernel to version 5.10.60
