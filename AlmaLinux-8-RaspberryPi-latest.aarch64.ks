@@ -65,8 +65,6 @@ cat > /boot/config.txt << EOF
 # this file is provided as a placeholder for user options
 EOF
 
-%end
-
 # Specific cmdline.txt files needed for raspberrypi2/3
 cat > /boot/cmdline.txt << EOF
 console=ttyAMA0,115200 console=tty1 root=/dev/mmcblk0p3 rootfstype=ext4 elevator=deadline rootwait
@@ -78,6 +76,7 @@ rm -f /etc/sysconfig/network-scripts/ifcfg-link
 # Remove machine-id on pre generated images
 rm -f /etc/machine-id
 touch /etc/machine-id
+%end
 
 %post --nochroot --erroronfail
 
