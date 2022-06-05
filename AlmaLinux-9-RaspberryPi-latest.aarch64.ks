@@ -2,9 +2,9 @@
 # appliance-creator -c AlmaLinux-9-RaspberryPi-latest.aarch64.ks \
 #   -d -v --logfile /var/tmp/AlmaLinux-9-RaspberryPi-latest-$(date +%Y%m%d-%s).aarch64.ks.log \
 #   --cache /root/cache --no-compress \
-#   -o $(pwd) --format raw --name AlmaLinux-9-RaspberryPi-latest-$(date +%Y%m%d-%s).aarch64 | \
+#   -o $(pwd) --format raw --name AlmaLinux-9-RaspberryPi-lat
+est-$(date +%Y%m%d-%s).aarch64 | \
 #   tee /var/tmp/AlmaLinux-9-RaspberryPi-latest-$(date +%Y%m%d-%s).aarch64.ks.log.2
-
 # Basic setup information
 url --url="https://repo.almalinux.org/almalinux/9/BaseOS/aarch64/os/"
 rootpw --plaintext almalinux
@@ -14,8 +14,9 @@ repo --name="baseos"    --baseurl=https://repo.almalinux.org/almalinux/9/BaseOS/
 repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/9/AppStream/aarch64/os/
 # repo --name="raspberrypi" --baseurl=https://repo.almalinux.org/almalinux/8/raspberrypi/aarch64/os/ --cost=1000 --install
 repo --name="raspberrypi" --baseurl=https://build.almalinux.org/pulp/content/builds/AlmaLinux-9-aarch64-2768-br/ --cost=1000 --install
+repo --name="raspberrypi-release" --baseurl=https://build.almalinux.org/pulp/content/builds/AlmaLinux-9-aarch64-2770-br/ --cost=1000 --install
 
-install
+# install
 keyboard us --xlayouts=us --vckeymap=us
 timezone --isUtc --nontp UTC
 selinux --enforcing
