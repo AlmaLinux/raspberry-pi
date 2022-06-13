@@ -11,9 +11,9 @@ rootpw --plaintext almalinux
 # Repositories to use
 repo --name="baseos"    --baseurl=https://repo.almalinux.org/almalinux/9/BaseOS/aarch64/os/
 repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/9/AppStream/aarch64/os/
-# repo --name="raspberrypi" --baseurl=https://repo.almalinux.org/almalinux/8/raspberrypi/aarch64/os/ --cost=1000 --install
-repo --name="raspberrypi" --baseurl=https://build.almalinux.org/pulp/content/builds/AlmaLinux-9-aarch64-2768-br/ --cost=1000 --install
-repo --name="raspberrypi-release" --baseurl=https://build.almalinux.org/pulp/content/builds/AlmaLinux-9-aarch64-2770-br/ --cost=1000 --install
+repo --name="raspberrypi" --baseurl=https://repo.almalinux.org/almalinux/8/raspberrypi/aarch64/os/ --cost=1000 --install
+# repo --name="raspberrypi" --baseurl=https://build.almalinux.org/pulp/content/builds/AlmaLinux-9-aarch64-2768-br/ --cost=1000 --install
+# repo --name="raspberrypi-release" --baseurl=https://build.almalinux.org/pulp/content/builds/AlmaLinux-9-aarch64-2770-br/ --cost=1000 --install
 
 # install
 keyboard us --xlayouts=us --vckeymap=us
@@ -49,6 +49,7 @@ e2fsprogs
 net-tools
 raspberrypi2-firmware
 raspberrypi2-kernel4
+nano
 %end
 
 %post
