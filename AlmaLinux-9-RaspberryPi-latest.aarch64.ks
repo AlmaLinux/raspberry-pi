@@ -75,6 +75,13 @@ EOF
 # Remove ifcfg-link on pre generated images
 rm -f /etc/sysconfig/network-scripts/ifcfg-link
 
+# rebuild dnf cache 
+dnf clean all
+/bin/date +%Y%m%d_%H%M > /etc/BUILDTIME
+echo '%_install_langs C.utf8' > /etc/rpm/macros.image-language-conf
+echo 'LANG="C.utf8"' >  /etc/locale.conf
+rpm --rebuilddb
+
 # Remove machine-id on pre generated images
 rm -f /etc/machine-id
 touch /etc/machine-id
