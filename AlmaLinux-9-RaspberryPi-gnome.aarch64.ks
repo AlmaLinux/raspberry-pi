@@ -11,9 +11,7 @@ rootpw --plaintext almalinux
 # Repositories to use
 repo --name="baseos"    --baseurl=https://repo.almalinux.org/almalinux/9/BaseOS/aarch64/os/
 repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/9/AppStream/aarch64/os/
-repo --name="raspberrypi" --baseurl=https://repo.almalinux.org/almalinux/8/raspberrypi/aarch64/os/ --cost=1000 --install
-# repo --name="raspberrypi" --baseurl=https://build.almalinux.org/pulp/content/builds/AlmaLinux-9-aarch64-2768-br/ --cost=1000 --install
-# repo --name="raspberrypi-release" --baseurl=https://build.almalinux.org/pulp/content/builds/AlmaLinux-9-aarch64-2770-br/ --cost=1000 --install
+repo --name="raspberrypi" --baseurl=https://repo.almalinux.org/almalinux/9/raspberrypi/aarch64/os/ --cost=1000 --installr/ --cost=1000 --install
 
 # install
 keyboard us --xlayouts=us --vckeymap=us
@@ -28,13 +26,20 @@ lang en_US.UTF-8
 
 # Disk setup
 clearpart --initlabel --all
-part /boot --asprimary --fstype=vfat --size=300 --label=boot
+part /boot --asprimary --fstype=vfat --size=500 --label=boot
 part swap --asprimary --fstype=swap --size=100 --label=swap
-part / --asprimary --fstype=ext4 --size=2400 --label=rootfs
+part / --asprimary --fstype=ext4 --size=3200 --label=rootfs
 
 # Package setup
 %packages
 @core
+@gnome-desktop
+firefox
+dejavu-sans-fonts
+dejavu-sans-mono-fonts
+dejavu-serif-fonts
+aajohan-comfortaa-fonts
+abattis-cantarell-fonts
 -caribou*
 -gnome-shell-browser-plugin
 -java-1.6.0-*
@@ -81,10 +86,15 @@ dnf clean all
 echo '%_install_langs C.utf8' > /etc/rpm/macros.image-language-conf
 echo 'LANG="C.utf8"' >  /etc/locale.conf
 rpm --rebuilddb
+# activate gui
+systemct set-default graphical.target
 
 # Remove machine-id on pre generated images
 rm -f /etc/machine-id
 touch /etc/machine-id
+# print disk usage
+df
+#
 %end
 
 %post --nochroot --erroronfail
