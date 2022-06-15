@@ -1,0 +1,5 @@
+sudo appliance-creator -c AlmaLinux-9-RaspberryPi-gnome.aarch64.ks \
+    -d -v --logfile /var/tmp/AlmaLinux-9-RaspberryPi-gnome-$(date +%Y%m%d-%s).aarch64.ks.log \
+    --cache ./cache9 --no-compress \
+    -o $(pwd) --format raw --name AlmaLinux-9-RaspberryPi-gnome-$(date +%Y%m%d-%s).aarch64 | \
+    tee /var/tmp/AlmaLinux-9-RaspberryPi-gnome-$(date +%Y%m%d-%s).aarch64.ks.log.2
