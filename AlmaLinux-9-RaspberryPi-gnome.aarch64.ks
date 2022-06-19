@@ -68,8 +68,17 @@ rootfs-expand
 EOF
 
 cat > /boot/config.txt << EOF
-# AlmaLinux doesn't use any default config options to work,
-# this file is provided as a placeholder for user options
+# This file is provided as a placeholder for user options
+# AlmaLinux - few default config options for better graphics support
+[all]
+disable_overscan=1
+dtoverlay=vc4-kms-v3d
+camera_auto_detect=0
+gpu_mem=64
+
+## AlmaLinux - can enable this for Pi 4 and later
+#[pi4]
+#max_framebuffers=2
 EOF
 
 # Specific cmdline.txt files needed for raspberrypi2/3
