@@ -11,7 +11,7 @@ rootpw --plaintext almalinux
 # Repositories to use
 repo --name="baseos"    --baseurl=https://repo.almalinux.org/almalinux/9/BaseOS/aarch64/os/
 repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/9/AppStream/aarch64/os/
-repo --name="raspberrypi" --baseurl=https://repo.almalinux.org/almalinux/9/raspberrypi/aarch64/os/ --cost=1000 --installr/ --cost=1000 --install
+repo --name="raspberrypi" --baseurl=https://repo.almalinux.org/almalinux/9/raspberrypi/aarch64/os/ --cost=1000 --install
 
 # install
 keyboard us --xlayouts=us --vckeymap=us
@@ -26,9 +26,9 @@ lang en_US.UTF-8
 
 # Disk setup
 clearpart --initlabel --all
-part /boot --asprimary --fstype=vfat --size=500 --label=boot
-part swap --asprimary --fstype=swap --size=100 --label=swap
-part / --asprimary --fstype=ext4 --size=3200 --label=rootfs
+part /boot --asprimary --fstype=vfat --size=512 --label=boot
+part swap --asprimary --fstype=swap --size=256 --label=swap
+part / --asprimary --fstype=ext4 --size=7000 --label=rootfs
 
 # Package setup
 %packages
