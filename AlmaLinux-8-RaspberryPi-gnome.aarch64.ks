@@ -28,7 +28,7 @@ lang en_US.UTF-8
 clearpart --initlabel --all
 part /boot --asprimary --fstype=vfat --size=500 --label=boot
 part swap --asprimary --fstype=swap --size=100 --label=swap
-part / --asprimary --fstype=ext4 --size=3200 --label=rootfs
+part / --asprimary --fstype=ext4 --size=4400 --label=rootfs
 
 # Package setup
 %packages
