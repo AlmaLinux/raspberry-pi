@@ -11,7 +11,7 @@ rootpw --plaintext almalinux
 # Repositories to use
 repo --name="baseos"    --baseurl=https://repo.almalinux.org/almalinux/8/BaseOS/aarch64/os/
 repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/8/AppStream/aarch64/os/
-repo --name="raspberrypi" --baseurl=https://repo.almalinux.org/almalinux/8/raspberrypi/aarch64/os/ --cost=1000 --installr/ --cost=1000 --install
+repo --name="raspberrypi" --baseurl=https://repo.almalinux.org/almalinux/8/raspberrypi/aarch64/os/ --cost=1000 --install
 
 # install
 keyboard us --xlayouts=us --vckeymap=us
