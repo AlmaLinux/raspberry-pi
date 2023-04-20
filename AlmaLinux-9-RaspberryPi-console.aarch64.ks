@@ -11,7 +11,7 @@ rootpw --plaintext almalinux
 # Repositories to use
 repo --name="baseos"    --baseurl=https://repo.almalinux.org/almalinux/9/BaseOS/aarch64/os/
 repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/9/AppStream/aarch64/os/
-repo --name="raspberrypi" --baseurl=https://repo.almalinux.org/almalinux/9/raspberrypi/aarch64/os/ --cost=1000 --install
+repo --name="raspberrypi" --baseurl=https://repo.almalinux.org/almalinux/9/raspberrypi/aarch64/os/
 
 # install
 keyboard us --xlayouts=us --vckeymap=us
@@ -73,7 +73,7 @@ EOF
 # Remove ifcfg-link on pre generated images
 rm -f /etc/sysconfig/network-scripts/ifcfg-link
 
-# rebuild dnf cache 
+# rebuild dnf cache
 dnf clean all
 /bin/date +%Y%m%d_%H%M > /etc/BUILDTIME
 echo '%_install_langs C.utf8' > /etc/rpm/macros.image-language-conf
