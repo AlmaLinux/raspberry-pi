@@ -67,6 +67,16 @@ rootfs-expand
 
 EOF
 
+# root password change motd
+cat >/etc/motd << EOF
+It's highly recommended to change root password by typing the following:
+passwd
+
+To remove this message:
+>/etc/motd
+
+EOF
+
 cat > /boot/config.txt << EOF
 # This file is provided as a placeholder for user options
 # AlmaLinux - few default config options for better graphics support

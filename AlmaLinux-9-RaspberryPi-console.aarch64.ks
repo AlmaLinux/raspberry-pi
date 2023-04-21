@@ -60,6 +60,19 @@ rootfs-expand
 
 EOF
 
+# root password change motd
+cat >/etc/motd << EOF
+It's highly recommended to change root password by typing the following:
+passwd
+
+To remove this message:
+>/etc/motd
+
+EOF
+
+# Allow root SSH login with password
+echo "PermitRootLogin yes" > /etc/ssh/sshd_config.d/01-permitrootlogin.conf
+
 cat > /boot/config.txt << EOF
 # AlmaLinux doesn't use any default config options to work,
 # this file is provided as a placeholder for user options
