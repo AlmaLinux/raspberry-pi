@@ -28,7 +28,6 @@ lang en_US.UTF-8
 # Disk setup
 clearpart --initlabel --all
 part /boot --asprimary --fstype=vfat --size=300 --label=boot
-part swap --asprimary --fstype=swap --size=100 --label=swap
 part / --asprimary --fstype=ext4 --size=2400 --label=rootfs
 
 # Package setup
@@ -78,7 +77,14 @@ EOF
 
 # Specific cmdline.txt files needed for raspberrypi2/3
 cat > /boot/cmdline.txt << EOF
-console=ttyAMA0,115200 console=tty1 root=/dev/mmcblk0p3 rootfstype=ext4 elevator=deadline rootwait
+console=ttyAMA0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline rootwait
+EOF
+
+# Create and initialize swapfile
+(umask 077; dd if=/dev/zero of=/swapfile bs=1M count=100)
+/usr/sbin/mkswap -p 4096 -L "_swap" /swapfile
+cat >> /etc/fstab << EOF
+/swapfile	none	swap	defaults	0	0
 EOF
 
 # Remove ifcfg-link on pre generated images
@@ -94,17 +100,13 @@ touch /etc/machine-id
 /usr/sbin/blkid
 LOOPPART=$(cat /proc/self/mounts |/usr/bin/grep '^\/dev\/mapper\/loop[0-9]p[0-9] '"$INSTALL_ROOT " | /usr/bin/sed 's/ .*//g')
 echo "Found loop part for PARTUUID $LOOPPART"
-BOOTDEV=$(/usr/sbin/blkid $LOOPPART|grep 'PARTUUID="........-03"'|sed 's/.*PARTUUID/PARTUUID/g;s/ .*//g;s/"//g')
+BOOTDEV=$(/usr/sbin/blkid $LOOPPART|grep 'PARTUUID="........-02"'|sed 's/.*PARTUUID/PARTUUID/g;s/ .*//g;s/"//g')
 echo "no chroot selected bootdev=$BOOTDEV"
 if [ -n "$BOOTDEV" ];then
     cat $INSTALL_ROOT/boot/cmdline.txt
-    echo sed -i "s|root=/dev/mmcblk0p3|root=${BOOTDEV}|g" $INSTALL_ROOT/boot/cmdline.txt
-    sed -i "s|root=/dev/mmcblk0p3|root=${BOOTDEV}|g" $INSTALL_ROOT/boot/cmdline.txt
+    echo sed -i "s|root=/dev/mmcblk0p2|root=${BOOTDEV}|g" $INSTALL_ROOT/boot/cmdline.txt
+    sed -i "s|root=/dev/mmcblk0p2|root=${BOOTDEV}|g" $INSTALL_ROOT/boot/cmdline.txt
 fi
 cat $INSTALL_ROOT/boot/cmdline.txt
-
-# Fix swap partition
-UUID_SWAP=$(/bin/grep 'swap'  $INSTALL_ROOT/etc/fstab  | awk '{print $1}' | awk -F '=' '{print $2}')
-/usr/sbin/mkswap -L "_swap" -p 4096  -U "${UUID_SWAP}"  /dev/disk/by-uuid/${UUID_SWAP}
 
 %end
