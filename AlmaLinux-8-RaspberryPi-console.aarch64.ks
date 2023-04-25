@@ -14,7 +14,7 @@ repo --name="baseos" --baseurl=https://repo.almalinux.org/almalinux/8/BaseOS/aar
 repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/8/AppStream/aarch64/os/
 repo --name="raspberrypi" --baseurl=https://repo.almalinux.org/almalinux/8/raspberrypi/aarch64/os/
 
-install
+# install
 keyboard us --xlayouts=us --vckeymap=us
 timezone --isUtc --nontp UTC
 selinux --enforcing
