@@ -45,6 +45,7 @@ chrony
 cloud-utils-growpart
 e2fsprogs
 net-tools
+linux-firmware-raspberrypi
 raspberrypi2-firmware
 raspberrypi2-kernel4
 nano
