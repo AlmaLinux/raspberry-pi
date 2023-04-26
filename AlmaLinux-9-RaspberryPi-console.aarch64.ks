@@ -6,7 +6,8 @@
 #   tee /var/tmp/AlmaLinux-9-RaspberryPi-latest-$(date +%Y%m%d-%s).aarch64.ks.log.2
 # Basic setup information
 url --url="https://repo.almalinux.org/almalinux/9/BaseOS/aarch64/os/"
-rootpw --plaintext almalinux
+# root password is locked but can be reset by cloud-init later
+rootpw --plaintext --lock almalinux
 
 # Repositories to use
 repo --name="baseos"    --baseurl=https://repo.almalinux.org/almalinux/9/BaseOS/aarch64/os/
@@ -53,11 +54,14 @@ nano
 
 %post
 # Mandatory README file
-cat >/root/README << EOF
+cat >/boot/README.txt << EOF
 == AlmaLinux 9 ==
 
-If you want to automatically resize your / partition, just type the following (as root user):
-rootfs-expand
+To login to Raspberry Pi via SSH, you need to register SSH public key *before*
+inserting SD card to Raspberry Pi. Edit user-data file and put SSH public key
+in the place.
+
+Default SSH username is almalinux.
 
 EOF
 
@@ -66,8 +70,17 @@ touch /boot/meta-data /boot/user-data
 
 cat >/boot/user-data << EOF
 #cloud-config
+#
+# This is default cloud-init config file for AlmaLinux Raspberry Pi image.
+#
+# If you want additional customization, refer to cloud-init documentation and
+# examples. Please note configurations written in this file will be usually
+# applied only once at very first boot.
+#
+# https://cloudinit.readthedocs.io/en/latest/reference/examples.html
 
 hostname: almalinux.local
+ssh_pwauth: false
 
 users:
   - name: almalinux
@@ -76,20 +89,8 @@ users:
     ssh_authorized_keys:
       # Put here your ssh public keys
       #- ssh-ed25519 AAAAC3Nz...
-EOF
-
-# root password change motd
-cat >/etc/motd << EOF
-It's highly recommended to change root password by typing the following:
-passwd
-
-To remove this message:
->/etc/motd
 
 EOF
-
-# Allow root SSH login with password
-echo "PermitRootLogin yes" > /etc/ssh/sshd_config.d/01-permitrootlogin.conf
 
 cat > /boot/config.txt << EOF
 # AlmaLinux doesn't use any default config options to work,
