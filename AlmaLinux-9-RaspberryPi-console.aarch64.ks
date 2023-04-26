@@ -41,6 +41,7 @@ part / --asprimary --fstype=ext4 --size=2400 --label=rootfs
 NetworkManager-wifi
 almalinux-release-raspberrypi
 chrony
+cloud-init
 cloud-utils-growpart
 e2fsprogs
 net-tools
@@ -58,6 +59,23 @@ cat >/root/README << EOF
 If you want to automatically resize your / partition, just type the following (as root user):
 rootfs-expand
 
+EOF
+
+# Data sources for cloud-init
+touch /boot/meta-data /boot/user-data
+
+cat >/boot/user-data << EOF
+#cloud-config
+
+hostname: almalinux.local
+
+users:
+  - name: almalinux
+    groups: [ adm, systemd-journal ]
+    sudo: [ "ALL=(ALL) NOPASSWD:ALL" ]
+    ssh_authorized_keys:
+      # Put here your ssh public keys
+      #- ssh-ed25519 AAAAC3Nz...
 EOF
 
 # root password change motd
@@ -109,6 +127,7 @@ touch /etc/machine-id
 
 /usr/sbin/blkid
 LOOPPART=$(cat /proc/self/mounts |/usr/bin/grep '^\/dev\/mapper\/loop[0-9]p[0-9] '"$INSTALL_ROOT " | /usr/bin/sed 's/ .*//g')
+VFATPART=$(cat /proc/self/mounts |/usr/bin/grep '^\/dev\/mapper\/loop[0-9]p[0-9] '"$INSTALL_ROOT"/boot | /usr/bin/sed 's/ .*//g')
 echo "Found loop part for PARTUUID $LOOPPART"
 BOOTDEV=$(/usr/sbin/blkid $LOOPPART|grep 'PARTUUID="........-02"'|sed 's/.*PARTUUID/PARTUUID/g;s/ .*//g;s/"//g')
 echo "no chroot selected bootdev=$BOOTDEV"
@@ -117,6 +136,13 @@ if [ -n "$BOOTDEV" ];then
     echo sed -i "s|root=/dev/mmcblk0p2|root=${BOOTDEV}|g" $INSTALL_ROOT/boot/cmdline.txt
     sed -i "s|root=/dev/mmcblk0p2|root=${BOOTDEV}|g" $INSTALL_ROOT/boot/cmdline.txt
 fi
+
+# cloud-init: NoCloud data source must have volume label "CIDATA"
+#
+# This didn't work for some reasons so using fatlabel instead.
+#    part /boot --asprimary --fstype=vfat --mkfsoptions="-n CIDATA"
+/usr/sbin/fatlabel $VFATPART "CIDATA"
+
 cat $INSTALL_ROOT/boot/cmdline.txt
 
 %end
