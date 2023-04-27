@@ -40,6 +40,22 @@ part / --asprimary --fstype=ext4 --size=2400 --label=rootfs
 -java-1.7.0-*
 -java-11-*
 -python*-caribou*
+-iwl1000-firmware
+-iwl100-firmware
+-iwl105-firmware
+-iwl135-firmware
+-iwl2000-firmware
+-iwl2030-firmware
+-iwl3160-firmware
+-iwl3945-firmware
+-iwl4965-firmware
+-iwl5000-firmware
+-iwl5150-firmware
+-iwl6000-firmware
+-iwl6000g2a-firmware
+-iwl6000g2b-firmware
+-iwl6050-firmware
+-iwl7260-firmware
 NetworkManager-wifi
 almalinux-release-raspberrypi
 chrony
@@ -112,6 +128,13 @@ EOF
 
 # Remove ifcfg-link on pre generated images
 rm -f /etc/sysconfig/network-scripts/ifcfg-link
+
+# rebuild dnf cache
+dnf clean all
+/bin/date +%Y%m%d_%H%M > /etc/BUILDTIME
+echo '%_install_langs C.utf8' > /etc/rpm/macros.image-language-conf
+echo 'LANG="C.utf8"' >  /etc/locale.conf
+rpm --rebuilddb
 
 # Remove machine-id on pre generated images
 rm -f /etc/machine-id
