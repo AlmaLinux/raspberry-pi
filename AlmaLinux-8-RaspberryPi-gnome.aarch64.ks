@@ -1,15 +1,17 @@
 # To build an image run the following as root:
 # appliance-creator -c AlmaLinux-8-RaspberryPi-gnome.aarch64.ks \
-#   -d -v --logfile /var/tmp/AlmaLinux-8-RaspberryPi-gnome-$(date +%Y%m%d-%s).aarch64.ks.log \
-#   --cache /root/cache --no-compress \
-#   -o $(pwd) --format raw --name AlmaLinux-8-RaspberryPi-gnome-$(date +%Y%m%d-%s).aarch64 | \
-#   tee /var/tmp/AlmaLinux-8-RaspberryPi-latest-$(date +%Y%m%d-%s).aarch64.ks.log.2
+#    -d -v --logfile /var/tmp/AlmaLinux-8-RaspberryPi-gnome-$(date +%Y%m%d-%s).aarch64.ks.log \
+#    --cache ./cache8 --no-compress \
+#    -o $(pwd) --format raw --name AlmaLinux-8-RaspberryPi-gnome-$(date +%Y%m%d-%s).aarch64 | \
+#    tee /var/tmp/AlmaLinux-8-RaspberryPi-gnome-$(date +%Y%m%d-%s).aarch64.ks.log.2
+#
 # Basic setup information
 url --url="https://repo.almalinux.org/almalinux/8/BaseOS/aarch64/os/"
-rootpw --plaintext almalinux
+# root password is locked but can be reset by cloud-init later
+rootpw --plaintext --lock almalinux
 
 # Repositories to use
-repo --name="baseos" --baseurl=https://repo.almalinux.org/almalinux/8/BaseOS/aarch64/os/
+repo --name="baseos"    --baseurl=https://repo.almalinux.org/almalinux/8/BaseOS/aarch64/os/
 repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/8/AppStream/aarch64/os/
 repo --name="raspberrypi" --baseurl=https://repo.almalinux.org/almalinux/8/raspberrypi/aarch64/os/
 
@@ -48,6 +50,7 @@ abattis-cantarell-fonts
 NetworkManager-wifi
 almalinux-release-raspberrypi
 chrony
+cloud-init
 cloud-utils-growpart
 e2fsprogs
 net-tools
@@ -59,21 +62,41 @@ nano
 
 %post
 # Mandatory README file
-cat >/root/README << EOF
+cat >/boot/README.txt << EOF
 == AlmaLinux 8 ==
 
-If you want to automatically resize your / partition, just type the following (as root user):
-rootfs-expand
+To login to Raspberry Pi via SSH, you need to register SSH public key *before*
+inserting SD card to Raspberry Pi. Edit user-data file and put SSH public key
+in the place.
+
+Default SSH username is almalinux.
 
 EOF
 
-# root password change motd
-cat >/etc/motd << EOF
-It's highly recommended to change root password by typing the following:
-passwd
+# Data sources for cloud-init
+touch /boot/meta-data /boot/user-data
 
-To remove this message:
->/etc/motd
+cat >/boot/user-data << EOF
+#cloud-config
+#
+# This is default cloud-init config file for AlmaLinux Raspberry Pi image.
+#
+# If you want additional customization, refer to cloud-init documentation and
+# examples. Please note configurations written in this file will be usually
+# applied only once at very first boot.
+#
+# https://cloudinit.readthedocs.io/en/latest/reference/examples.html
+
+hostname: almalinux.local
+ssh_pwauth: false
+
+users:
+  - name: almalinux
+    groups: [ adm, systemd-journal ]
+    sudo: [ "ALL=(ALL) NOPASSWD:ALL" ]
+    ssh_authorized_keys:
+      # Put here your ssh public keys
+      #- ssh-ed25519 AAAAC3Nz...
 
 EOF
 
@@ -127,6 +150,7 @@ df
 
 /usr/sbin/blkid
 LOOPPART=$(cat /proc/self/mounts |/usr/bin/grep '^\/dev\/mapper\/loop[0-9]p[0-9] '"$INSTALL_ROOT " | /usr/bin/sed 's/ .*//g')
+VFATPART=$(cat /proc/self/mounts |/usr/bin/grep '^\/dev\/mapper\/loop[0-9]p[0-9] '"$INSTALL_ROOT"/boot | /usr/bin/sed 's/ .*//g')
 echo "Found loop part for PARTUUID $LOOPPART"
 BOOTDEV=$(/usr/sbin/blkid $LOOPPART|grep 'PARTUUID="........-02"'|sed 's/.*PARTUUID/PARTUUID/g;s/ .*//g;s/"//g')
 echo "no chroot selected bootdev=$BOOTDEV"
@@ -135,6 +159,13 @@ if [ -n "$BOOTDEV" ];then
     echo sed -i "s|root=/dev/mmcblk0p2|root=${BOOTDEV}|g" $INSTALL_ROOT/boot/cmdline.txt
     sed -i "s|root=/dev/mmcblk0p2|root=${BOOTDEV}|g" $INSTALL_ROOT/boot/cmdline.txt
 fi
+
+# cloud-init: NoCloud data source must have volume label "CIDATA"
+#
+# This didn't work for some reasons so using fatlabel instead.
+#    part /boot --asprimary --fstype=vfat --mkfsoptions="-n CIDATA"
+/usr/sbin/fatlabel $VFATPART "CIDATA"
+
 cat $INSTALL_ROOT/boot/cmdline.txt
 
 %end

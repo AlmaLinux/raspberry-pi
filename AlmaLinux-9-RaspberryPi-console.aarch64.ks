@@ -1,9 +1,10 @@
 # To build an image run the following as root:
-# appliance-creator -c AlmaLinux-9-RaspberryPi-latest.aarch64.ks \
-#   -d -v --logfile /var/tmp/AlmaLinux-9-RaspberryPi-latest-$(date +%Y%m%d-%s).aarch64.ks.log \
-#   --cache /root/cache --no-compress \
-#   -o $(pwd) --format raw --name AlmaLinux-9-RaspberryPi-latest-$(date +%Y%m%d-%s).aarch64 | \
-#   tee /var/tmp/AlmaLinux-9-RaspberryPi-latest-$(date +%Y%m%d-%s).aarch64.ks.log.2
+# appliance-creator -c AlmaLinux-9-RaspberryPi-console.aarch64.ks \
+#    -d -v --logfile /var/tmp/AlmaLinux-9-RaspberryPi-console-$(date +%Y%m%d-%s).aarch64.ks.log \
+#    --cache ./cache9 --no-compress \
+#    -o $(pwd) --format raw --name AlmaLinux-9-RaspberryPi-console-$(date +%Y%m%d-%s).aarch64 | \
+#    tee /var/tmp/AlmaLinux-9-RaspberryPi-console-$(date +%Y%m%d-%s).aarch64.ks.log.2
+#
 # Basic setup information
 url --url="https://repo.almalinux.org/almalinux/9/BaseOS/aarch64/os/"
 # root password is locked but can be reset by cloud-init later
