@@ -76,7 +76,7 @@ EOF
 # Data sources for cloud-init
 touch /boot/meta-data /boot/user-data
 
-cat >/boot/user-data << EOF
+cat >/boot/user-data << "EOF"
 #cloud-config
 #
 # This is default cloud-init config file for AlmaLinux Raspberry Pi image.
@@ -94,6 +94,8 @@ users:
   - name: almalinux
     groups: [ adm, systemd-journal ]
     sudo: [ "ALL=(ALL) NOPASSWD:ALL" ]
+    lock_passwd: false
+    passwd: $6$EJCqLU5JAiiP5iSS$wRmPHYdotZEXa8OjfcSsJ/f1pAYTk0/OFHV1CGvcszwmk6YwwlZ/Lwg8nqjRT0SSKJIMh/3VuW5ZBz2DqYZ4c1
     ssh_authorized_keys:
       # Put here your ssh public keys
       #- ssh-ed25519 AAAAC3Nz...
