@@ -114,6 +114,8 @@ EOF
 cat > /boot/config.txt << EOF
 # AlmaLinux doesn't use any default config options to work,
 # this file is provided as a placeholder for user options
+
+[all]
 EOF
 
 # Specific cmdline.txt files needed for raspberrypi2/3
