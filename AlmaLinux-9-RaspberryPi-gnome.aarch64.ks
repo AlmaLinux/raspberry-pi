@@ -111,9 +111,11 @@ dtoverlay=vc4-kms-v3d
 camera_auto_detect=0
 gpu_mem=64
 
-## AlmaLinux - can enable this for Pi 4 and later
+## AlmaLinux - can enable this for Pi 4
 #[pi4]
 #max_framebuffers=2
+
+[all]
 EOF
 
 # Specific cmdline.txt files needed for raspberrypi2/3
