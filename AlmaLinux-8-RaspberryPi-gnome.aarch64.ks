@@ -125,7 +125,7 @@ cat > /boot/config.txt << EOF
 disable_overscan=1
 dtoverlay=vc4-kms-v3d
 camera_auto_detect=0
-gpu_mem=64
+gpu_mem=128
 
 ## AlmaLinux - can enable this for Pi 4 and later
 #[pi4]
