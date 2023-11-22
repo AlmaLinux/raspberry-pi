@@ -104,7 +104,7 @@ EOF
 
 # Specific cmdline.txt files needed for raspberrypi2/3
 cat > /boot/cmdline.txt << EOF
-console=ttyAMA0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline rootwait
+console=ttyAMA0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait
 EOF
 
 # Create and initialize swapfile
