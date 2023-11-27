@@ -21,7 +21,7 @@ timezone --isUtc --nontp UTC
 selinux --enforcing
 firewall --enabled --port=22:tcp
 network --bootproto=dhcp --device=link --activate --onboot=on
-services --enabled=sshd,NetworkManager,chronyd
+services --enabled=sshd,NetworkManager,chronyd,bluetooth
 shutdown
 bootloader --location=mbr
 lang en_US.UTF-8
@@ -42,6 +42,7 @@ part / --asprimary --fstype=ext4 --size=2400 --label=rootfs
 -python*-caribou*
 NetworkManager-wifi
 almalinux-release-raspberrypi
+bluez
 chrony
 cloud-init
 cloud-utils-growpart
