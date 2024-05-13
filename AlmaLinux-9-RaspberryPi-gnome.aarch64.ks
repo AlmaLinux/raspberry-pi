@@ -98,8 +98,8 @@ users:
     sudo: [ "ALL=(ALL) NOPASSWD:ALL" ]
     lock_passwd: false
     passwd: $6$EJCqLU5JAiiP5iSS$wRmPHYdotZEXa8OjfcSsJ/f1pAYTk0/OFHV1CGvcszwmk6YwwlZ/Lwg8nqjRT0SSKJIMh/3VuW5ZBz2DqYZ4c1
-    ssh_authorized_keys:
-      # Put here your ssh public keys
+    # Uncomment below to add your SSH public keys as YAML array
+    #ssh_authorized_keys:
       #- ssh-ed25519 AAAAC3Nz...
 
 EOF
