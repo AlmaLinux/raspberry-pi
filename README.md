@@ -6,20 +6,19 @@ Last Update 2023-06-16: [Changelog](#changelog) below.
 
 This repository is the home of the Official AlmaLinux Raspberry Pi Image.
 
-Images made possible by the incredible work contributed by the immortal [Pablo Greco](https://github.com/psgreco), [Mark Verlinde](https://github.com/markVnl), [Fabian Arrotin](https://github.com/arrfab) and [Koichiro Iwao](https://github.com/metalefty)
+Images made possible by the incredible work contributed by the immortal [Pablo Greco](https://github.com/psgreco), [Mark Verlinde](https://github.com/markVnl), [Fabian Arrotin](https://github.com/arrfab) and [Koichiro Iwao](https://github.com/metalefty).
 
 ## AlmaLinux Raspberry Pi Quick Start
-This has been tested on Raspberry Pi 3 and 4.
 
 Please file any bugs on https://bugs.almalinux.org and feel free to discuss on our [Community Chat](https://chat.almalinux.org), the [Forums](https://almalinux.discourse.group/t/about-the-raspberry-pi-category/333) or [Reddit](https://www.reddit.com/r/AlmaLinux/).
 
-**Step 1**: [Grab the image](https://repo.almalinux.org/rpi/images/AlmaLinux-8-RaspberryPi-latest.aarch64.raw.xz), verify the [CHECKSUM](https://repo.almalinux.org/rpi/images/CHECKSUM) and burn it to an SD card using [Fedora Media Writer](https://github.com/FedoraQt/MediaWriter/releases/) , [Balena Etcher](https://www.balena.io/etcher/), RPi Image, dd or whatever tool you choose.
+**Step 1**: [Grab the image](https://repo.almalinux.org/rpi/images/AlmaLinux-8-RaspberryPi-latest.aarch64.raw.xz), verify the [CHECKSUM](https://repo.almalinux.org/rpi/images/CHECKSUM) and burn it to an SD card using [Fedora Media Writer](https://github.com/FedoraQt/MediaWriter/releases/) , [Balena Etcher](https://www.balena.io/etcher/), [Raspberry Pi Imager](https://www.raspberrypi.com/software/), dd or whatever tool you choose.
 
-**Step 2**: Insert your SD Card into your Raspberry PI and boot!
+**Step 2**: Edit `user-data` file if you want to configure early initialization.
 
-**Step 3**: Login. The user is `almalinux` password is `almalinux`.
+**Step 2**: Insert your SD Card into your Raspberry Pi and boot!
 
-**Step 4**: Resize your root filesystem by running `sudo rootfs-expand`. (Thanks Fabian!)
+**Step 3**: Login. The default user is `almalinux` and password is `almalinux`.
 
 ## AlmaLinux Raspberry Pi Guide
 Full guide for AlmaLinux on Raspberry Pi is available here: https://wiki.almalinux.org/documentation/raspberry-pi
