@@ -24,16 +24,21 @@ Please file any bugs on https://bugs.almalinux.org and feel free to discuss on o
 Full guide for AlmaLinux on Raspberry Pi is available here: https://wiki.almalinux.org/documentation/raspberry-pi
 
 ## Changelog
-2023-06-16
+
+### 2024-06-05
+- Update for AlmaLinux 8.10 and 9.4
+- Support Raspberry Pi 5
+
+### 2023-06-16
 - Update for AlmaLinux 8.8 and 9.2
 - Added support for cloud-init
 - Added linux-firmware-raspberrypi package to support Raspberry Pi 400 Wi-Fi
 
-2021-11-12
+### 2021-11-12
 - Updated to AlmaLinux 8.5
 - Updated Kernel to version 5.10.78
 
-2021-10-05
+### 2021-10-05
 - Relocated images, added kernels and release packages to RPi-specific repository
 - Updated Kernel to version 5.10.60
 - Fixed Wi-Fi via an updated `linux-firmware` package to include Matthias Brugger's <mbrugger@suse.com> fix for Raspberry Pi
