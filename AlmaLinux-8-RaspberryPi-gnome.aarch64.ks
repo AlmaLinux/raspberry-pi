@@ -29,7 +29,7 @@ lang en_US.UTF-8
 # Disk setup
 clearpart --initlabel --all
 part /boot --asprimary --fstype=vfat --size=500 --label=boot
-part / --asprimary --fstype=ext4 --size=4600 --label=rootfs
+part / --asprimary --fstype=ext4 --size=4700 --label=rootfs
 
 # Package setup
 %packages
@@ -146,6 +146,17 @@ EOF
 /usr/sbin/mkswap -p 4096 -L "_swap" /swapfile
 cat >> /etc/fstab << EOF
 /swapfile	none	swap	defaults	0	0
+EOF
+
+cat > /etc/X11/xorg.conf.d/99-vc4.conf << EOF
+# Workaround for GUI on RPi 5
+# https://forums.raspberrypi.com/viewtopic.php?p=2159161#p2159161
+Section "OutputClass"
+	Identifier "vc4"
+	MatchDriver "vc4"
+	Driver "modesetting"
+	Option "PrimaryGPU" "true"
+EndSection
 EOF
 
 # Remove ifcfg-link on pre generated images

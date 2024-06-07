@@ -29,7 +29,7 @@ lang en_US.UTF-8
 # Disk setup
 clearpart --initlabel --all
 part /boot --asprimary --fstype=vfat --size=300 --label=boot
-part / --asprimary --fstype=ext4 --size=2500 --label=rootfs
+part / --asprimary --fstype=ext4 --size=2700 --label=rootfs
 
 # Package setup
 %packages
