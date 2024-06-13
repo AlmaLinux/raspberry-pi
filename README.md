@@ -25,6 +25,9 @@ Full guide for AlmaLinux on Raspberry Pi is available here: https://wiki.almalin
 
 ## Changelog
 
+## 2024-06-13
+- Enable serial console [#47](https://github.com/AlmaLinux/raspberry-pi/pull/47)
+
 ### 2024-06-05
 - Update for AlmaLinux 8.10 and 9.4
 - Support Raspberry Pi 5
