@@ -98,15 +98,17 @@ users:
 EOF
 
 cat > /boot/config.txt << EOF
-# AlmaLinux doesn't use any default config options to work,
-# this file is provided as a placeholder for user options
+# This file is provided as a placeholder for user options
+# AlmaLinux - few default config options
 
 [all]
+# enable serial console
+enable_uart=1
 EOF
 
-# Specific cmdline.txt files needed for raspberrypi2/3
+# Kernel command line string
 cat > /boot/cmdline.txt << EOF
-console=ttyAMA0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait
+console=ttyS0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait
 EOF
 
 # Create and initialize swapfile
