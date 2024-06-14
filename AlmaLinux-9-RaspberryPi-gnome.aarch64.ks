@@ -60,6 +60,7 @@ raspberrypi-userland
 raspberrypi2-firmware
 raspberrypi2-kernel4
 nano
+libgpiod-utils
 %end
 
 %post

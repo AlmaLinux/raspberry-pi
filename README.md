@@ -25,8 +25,9 @@ Full guide for AlmaLinux on Raspberry Pi is available here: https://wiki.almalin
 
 ## Changelog
 
-## 2024-06-13
+## 2024-06-14
 - Enable serial console [#47](https://github.com/AlmaLinux/raspberry-pi/pull/47)
+- Install utilities for GPIO by default (AL9)
 
 ### 2024-06-05
 - Update for AlmaLinux 8.10 and 9.4
