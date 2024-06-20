@@ -60,6 +60,7 @@ raspberrypi-userland
 raspberrypi2-firmware
 raspberrypi2-kernel4
 nano
+libgpiod-utils
 %end
 
 %post
@@ -112,6 +113,8 @@ disable_overscan=1
 dtoverlay=vc4-kms-v3d
 camera_auto_detect=0
 gpu_mem=128
+# enable serial console
+enable_uart=1
 
 ## AlmaLinux - can enable this for Pi 4
 #[pi4]
@@ -120,9 +123,9 @@ gpu_mem=128
 [all]
 EOF
 
-# Specific cmdline.txt files needed for raspberrypi2/3
+# Kernel command line string
 cat > /boot/cmdline.txt << EOF
-console=ttyAMA0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait
+console=ttyS0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait
 EOF
 
 # Create and initialize swapfile
