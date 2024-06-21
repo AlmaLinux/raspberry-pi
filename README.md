@@ -2,11 +2,18 @@
 
 [![asciicast](https://asciinema.org/a/423618.svg)](https://asciinema.org/a/423618)
 
-Last Update 2023-06-16: [Changelog](#changelog) below.
+Last Update 2024-06-10: [Changelog](#changelog) below.
 
 This repository is the home of the Official AlmaLinux Raspberry Pi Image.
 
 Images made possible by the incredible work contributed by the immortal [Pablo Greco](https://github.com/psgreco), [Mark Verlinde](https://github.com/markVnl), [Fabian Arrotin](https://github.com/arrfab) and [Koichiro Iwao](https://github.com/metalefty).
+
+Supported hardware:
+* Raspberry Pi 5 
+* Raspberry Pi 4 Model B
+* Raspberry Pi 400
+* Raspberry Pi 3 Model B+
+* Raspberry Pi 3 Model A+
 
 ## AlmaLinux Raspberry Pi Quick Start
 
