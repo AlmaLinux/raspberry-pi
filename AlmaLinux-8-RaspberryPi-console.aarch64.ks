@@ -21,7 +21,7 @@ timezone --isUtc --nontp UTC
 selinux --enforcing
 firewall --enabled --port=22:tcp
 network --bootproto=dhcp --device=link --activate --onboot=on
-services --enabled=sshd,NetworkManager,chronyd,bluetooth
+services --enabled=sshd,NetworkManager,chronyd,bluetooth,cpupower,cpupower
 shutdown
 bootloader --location=mbr
 lang en_US.UTF-8
@@ -39,6 +39,7 @@ part / --asprimary --fstype=ext4 --size=2700 --label=rootfs
 -java-1.6.0-*
 -java-1.7.0-*
 -java-11-*
+-kernel-tools
 -python*-caribou*
 -iwl1000-firmware
 -iwl100-firmware
@@ -68,6 +69,7 @@ linux-firmware-raspberrypi
 raspberrypi-userland
 raspberrypi2-firmware
 raspberrypi2-kernel4
+raspberrypi2-kernel4-tools
 nano
 %end
 
@@ -116,6 +118,8 @@ EOF
 cat > /boot/config.txt << EOF
 # This file is provided as a placeholder for user options
 # AlmaLinux - few default config options
+[pi4]
+arm_boost=1
 
 [all]
 # enable serial console

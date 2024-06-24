@@ -21,7 +21,7 @@ timezone --isUtc --nontp UTC
 selinux --enforcing
 firewall --enabled --port=22:tcp
 network --bootproto=dhcp --device=link --activate --onboot=on
-services --enabled=sshd,NetworkManager,chronyd,bluetooth
+services --enabled=sshd,NetworkManager,chronyd,bluetooth,cpupower
 shutdown
 bootloader --location=mbr
 lang en_US.UTF-8
@@ -46,6 +46,7 @@ abattis-cantarell-fonts
 -java-1.6.0-*
 -java-1.7.0-*
 -java-11-*
+-kernel-tools
 -python*-caribou*
 -iwl1000-firmware
 -iwl100-firmware
@@ -75,6 +76,7 @@ linux-firmware-raspberrypi
 raspberrypi-userland
 raspberrypi2-firmware
 raspberrypi2-kernel4
+raspberrypi2-kernel4-tools
 nano
 %end
 
@@ -132,8 +134,9 @@ gpu_mem=128
 enable_uart=1
 
 ## AlmaLinux - can enable this for Pi 4
-#[pi4]
+[pi4]
 #max_framebuffers=2
+arm_boost=1
 
 [all]
 EOF
