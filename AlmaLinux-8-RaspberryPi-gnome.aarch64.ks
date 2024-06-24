@@ -172,7 +172,7 @@ echo 'LANG="C.utf8"' >  /etc/locale.conf
 rpm --rebuilddb
 
 # activate gui
-systemct set-default graphical.target
+systemctl set-default graphical.target
 
 # Remove machine-id on pre generated images
 rm -f /etc/machine-id
