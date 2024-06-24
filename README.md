@@ -2,13 +2,13 @@
 
 [![asciicast](https://asciinema.org/a/423618.svg)](https://asciinema.org/a/423618)
 
-Last Update 2024-06-10: [Changelog](#changelog) below.
+Last Update 2024-06-24: [Changelog](#changelog) below.
 
 This repository is the home of the Official AlmaLinux Raspberry Pi Image.
 
 Images made possible by the incredible work contributed by the immortal [Pablo Greco](https://github.com/psgreco), [Mark Verlinde](https://github.com/markVnl), [Fabian Arrotin](https://github.com/arrfab) and [Koichiro Iwao](https://github.com/metalefty).
 
-Supported hardware:
+### Tested hardware:
 * Raspberry Pi 5 
 * Raspberry Pi 4 Model B
 * Raspberry Pi 400
@@ -31,6 +31,9 @@ Please file any bugs on https://bugs.almalinux.org and feel free to discuss on o
 Full guide for AlmaLinux on Raspberry Pi is available here: https://wiki.almalinux.org/documentation/raspberry-pi
 
 ## Changelog
+## 2024-06-24
+- Enable ondemand CPU frequency scaling [#48](https://github.com/AlmaLinux/raspberry-pi/issues/48)
+- V3D graphic driver is now working on AL9 [#32](https://github.com/AlmaLinux/raspberry-pi/issues/32)
 
 ## 2024-06-14
 - Enable serial console [#47](https://github.com/AlmaLinux/raspberry-pi/pull/47)
