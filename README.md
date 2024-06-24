@@ -31,11 +31,11 @@ Please file any bugs on https://bugs.almalinux.org and feel free to discuss on o
 Full guide for AlmaLinux on Raspberry Pi is available here: https://wiki.almalinux.org/documentation/raspberry-pi
 
 ## Changelog
-## 2024-06-24
+### 2024-06-24
 - Enable ondemand CPU frequency scaling [#48](https://github.com/AlmaLinux/raspberry-pi/issues/48)
 - V3D graphic driver is now working on AL9 [#32](https://github.com/AlmaLinux/raspberry-pi/issues/32)
 
-## 2024-06-14
+### 2024-06-14
 - Enable serial console [#47](https://github.com/AlmaLinux/raspberry-pi/pull/47)
 - Install utilities for GPIO by default (AL9)
 
