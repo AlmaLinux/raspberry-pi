@@ -21,7 +21,7 @@ timezone --isUtc --nontp UTC
 selinux --enforcing
 firewall --enabled --port=22:tcp
 network --bootproto=dhcp --device=link --activate --onboot=on
-services --enabled=sshd,NetworkManager,chronyd,bluetooth,cpupower
+services --enabled=sshd,NetworkManager,chronyd,bluetooth
 shutdown
 bootloader --location=mbr
 lang en_US.UTF-8
