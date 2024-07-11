@@ -1,0 +1,292 @@
+name: Build Raspberry Pi images
+
+on:
+  workflow_dispatch:
+    inputs:
+
+      console:
+        description: 'console'
+        required: true
+        type: boolean
+        default: true
+
+      gnome:
+        description: 'GNOME'
+        required: true
+        type: boolean
+        default: true
+
+      version_major:
+        description: 'AlmaLinux major version'
+        required: true
+        default: '9'
+        type: choice
+        options:
+          - 9
+          - 8
+
+      store_as_artifact:
+        description: "Store images to the workflow Artifacts"
+        required: true
+        type: boolean
+        default: false
+
+      upload_to_s3:
+        description: "Upload to S3 Bucket"
+        required: true
+        type: boolean
+        default: true
+
+      notify_mattermost:
+        description: "Send notification to Mattermost"
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+
+  start-runner:
+    timeout-minutes: 10              # normally it only takes 1-2 minutes
+    name: EC2 self-hosted runner for '${{ matrix.image_types }}'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    strategy:
+      fail-fast: false
+      matrix:
+        # Set image types matrix based on boolean inputs.* with true value
+        image_types: ${{ fromJSON(format('["{0}", "{1}"]', ( inputs.console && 'console' ), ( inputs.gnome && 'gnome' ) )) }}
+        exclude:
+          - image_types: 'false'
+
+    steps:
+
+    - name: Setup and start the runner
+      id: start-ec2-runner
+      uses: NextChapterSoftware/ec2-action-builder@v1.5
+      with:
+        github_token: ${{ secrets.GIT_HUB_TOKEN }}
+        aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws_region: ${{ secrets.AWS_REGION }}
+        ec2_ami_id: ${{ inputs.version_major == '9' && secrets.EC2_AMI_ID_AL9 || secrets.EC2_AMI_ID_AL8 }}
+        ec2_subnet_id: ${{ secrets.EC2_SUBNET_ID}}
+        ec2_security_group_id: ${{ secrets.EC2_SECURITY_GROUP_ID }}
+
+        ec2_instance_type: t4g.medium       # 2 vCPU and 4 GiM Memory
+        ec2_root_disk_size_gb: "8"          # override default size which is too small for images
+        ec2_root_disk_ebs_class: "gp3"      # use faster and cheeper storage instead of default 'gp2'
+        ec2_instance_ttl: 60                # Optional (default is 60 minutes)
+        ec2_spot_instance_strategy: None    # Other options are: SpotOnly, BestEffort, MaxPerformance
+        ec2_instance_tags: >                # Required for IAM role resource permission scoping
+          [
+              {"Key": "Project", "Value": "GitHub Actions Self-hosted Runners"},
+              {"Key": "Owner", "Value": "${{ secrets.EC2_OWNER }}"}
+          ]
+
+  build-image:
+    name: AlmaLinux ${{ inputs.version_major }} '${{ matrix.image_types }}' image
+    runs-on: ${{ github.run_id }}
+    needs: start-runner # required to start the main job when the runner is ready
+    strategy:
+      fail-fast: false
+      # max-parallel: 1
+      matrix:
+        # Set image types matrix based on boolean inputs.* with true value
+        image_types: ${{ fromJSON(format('["{0}", "{1}"]', ( inputs.console && 'console' ), ( inputs.gnome && 'gnome' ) )) }}
+        exclude:
+          - image_types: 'false'
+
+    steps:
+
+    - uses: actions/checkout@v4
+      name: Checkout ${{ github.action_repository }}
+
+    - name: Prepare AlmaLinux Minor version number
+      run: |
+        release=$(rpm -q --qf="%{VERSION}\n" https://repo.almalinux.org/almalinux/almalinux-release-latest-${{ inputs.version_major }}.aarch64.rpm 2>/dev/null)
+        version_minor=$(cut -d '.' -f 2 <<< "$release")
+        [ "x${version_minor}" != "x" ] && echo "version_minor=${version_minor}" >> $GITHUB_ENV
+
+    - name: Prepare other stuff
+      run: |
+        # date stamp
+        date_stamp=$(date -u '+%Y%m%d')
+        [ "x${date_stamp}" != "x" ] && echo "date_stamp=${date_stamp}" >> $GITHUB_ENV
+
+        # date_time stamp
+        date_time_stamp=$(date -u '+%Y%m%d%H%M%S')
+        [ "x${date_time_stamp}" != "x" ] && echo "date_time_stamp=${date_time_stamp}" >> $GITHUB_ENV
+
+        # List of the packages to prepare build env
+        need_pkgs="appliance-tools xz unzip"
+        [ "x${need_pkgs}" != "x" ] && echo "need_pkgs=${need_pkgs}" >> $GITHUB_ENV
+
+        # Kickstart file name
+        image_type=${{ matrix.image_types }}
+        image_type="${image_type,,}"
+        kickstart="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-${image_type}.aarch64.ks"
+        [ "x${kickstart}" != "x" ] && echo "kickstart=${kickstart}" >> $GITHUB_ENV
+
+        # Appliance Tools results directory
+        rpi_image_resultdir="/rpi-image"
+        [ "x${rpi_image_resultdir}" != "x" ] && echo "rpi_image_resultdir=${rpi_image_resultdir}" >> $GITHUB_ENV
+        sudo mkdir -p ${rpi_image_resultdir}
+
+        # Log file base name
+        log_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-${{ matrix.image_types }}-${{ inputs.version_major }}.${{ env.version_minor }}-${date_stamp}.aarch64"
+        [ "x${log_name}" != "x" ] && echo "log_name=${log_name}" >> $GITHUB_ENV
+
+        # Image file base name
+        image_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-${{ inputs.version_major }}.${{ env.version_minor }}-${date_stamp}.aarch64"
+        [ "${{ matrix.image_types }}" = "gnome" ] && image_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-GNOME-${{ inputs.version_major }}.${{ env.version_minor }}-${date_stamp}.aarch64"
+        [ "x${image_name}" != "x" ] && echo "image_name=${image_name}" >> $GITHUB_ENV
+
+    - name: Generate appliance creator script
+      run: |
+        cat <<'EOF'>./appliance-creator.sh
+        appliance-creator \
+        -c ${{ env.kickstart }} \
+        -d -v --logfile ${{ env.rpi_image_resultdir }}/${{ env.log_name }}.log \
+        --cache ./cache8 --no-compress \
+        -o ${{ env.rpi_image_resultdir }} --format raw --name ${{ env.image_name }} | \
+        tee ${{ env.rpi_image_resultdir }}/${{ env.log_name }}.log.2
+        EOF
+
+    - name: Update the system
+      run: |
+          sudo dnf -y -q clean all
+          sudo dnf -y -q update
+
+    - name: Prepare build infrastructure
+      run: |
+        # Install need packages
+        sudo dnf -y -q install epel-release
+        sudo dnf install -y -q ${{ env.need_pkgs }}
+
+        # set the mode SELinux is running in into Permissive
+        sudo setenforce 0
+
+    - name: Create image
+      id: create-image
+      run: |
+        # Run appliance-creator
+        sudo bash ./appliance-creator.sh
+
+        # Rename image to avoid 'sda' in the file name
+        mv -f ${{ env.rpi_image_resultdir }}/${{ env.image_name }}/${{ env.image_name }}-sda.raw \
+          ${{ env.rpi_image_resultdir }}/${{ env.image_name }}/${{ env.image_name }}.raw
+
+    - name: Compress image
+      if: steps.create-image.outcome == 'success' && inputs.upload_to_s3
+      id: compress-image
+      run: |
+        cd ${{ env.rpi_image_resultdir }}/${{ env.image_name }}
+
+        # XZ default compression level is 6 (of 0-9)
+        ( [ "${{ inputs.upload_to_s3 }}" = "true" ] && xz -k -9 -e -T0 ${{ env.image_name }}.raw ) || true
+
+    - name: Collect and compress logs, xml
+      id: compress-logs
+      if: success() || failure()
+      run: |
+        cd ${{ env.rpi_image_resultdir }}
+        tar cf ${{ env.log_name }}.log.tar ${{ env.log_name }}.log*
+
+        if [ -f ${{ env.image_name }}/${{ env.image_name }}.xml ]; then
+          # Remove 'sda' in the XML to match file name
+          sed -i 's/-sda//g' ${{ env.image_name }}/${{ env.image_name }}.xml
+          tar --append --file=${{ env.log_name }}.log.tar ${{ env.image_name }}/${{ env.image_name }}.xml
+        fi
+
+        # XZ default compression level is 6 (of 0-9)
+        ( [ "${{ inputs.upload_to_s3 }}" = "true" ] && xz -k -9 -e -T0 ${{ env.log_name }}.log.tar ) || true
+
+    - uses: actions/upload-artifact@v4
+      name: Store logs, xml as artifact
+      id: logs-artifact
+      if: success() || failure()
+      with:
+        name: ${{ env.log_name }}.log.tar
+        path: ${{ env.rpi_image_resultdir }}/${{ env.log_name }}.log.tar
+
+    - uses: actions/upload-artifact@v4
+      name: Store image as artifact
+      id: image-artifact
+      if: steps.create-image.outcome == 'success' && inputs.store_as_artifact
+      with:
+        name: "${{ env.image_name }}.raw"
+        compression-level: 1
+        path: ${{ env.rpi_image_resultdir }}/${{ env.image_name }}/${{ env.image_name }}.raw
+
+    - name: Configure AWS credentials
+      if: steps.compress-image.outcome == 'success' && inputs.upload_to_s3
+      uses: aws-actions/configure-aws-credentials@v4.0.2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Install aws CLI
+      if: steps.compress-image.outcome == 'success' && inputs.upload_to_s3
+      run: |
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
+        unzip -qq awscliv2.zip
+        sudo ./aws/install
+        # [Debug]
+        aws --version
+
+    - name: Publish to S3 Bucket and put object tagging with aws CLI
+      id: publish-to-s3
+      if: steps.compress-image.outcome == 'success' && inputs.upload_to_s3
+      run: |
+        cd ${{ env.rpi_image_resultdir }}
+        for object in ${{ env.image_name }}/${{ env.image_name }}.raw.xz ${{ env.log_name }}.log.tar.xz; do
+          aws s3 cp ${object} s3://${{ vars.AWS_S3_BUCKET }}/${{ env.date_time_stamp }}/
+          aws s3api put-object-tagging --bucket ${{ vars.AWS_S3_BUCKET }} --key ${{ env.date_time_stamp }}/$(basename ${object}) --tagging 'TagSet={Key=public,Value=yes}'
+        done
+
+    - name: Put S3 Bucket download URLs
+      if: steps.publish-to-s3.outcome == 'success' && inputs.upload_to_s3
+      uses: actions/github-script@v7
+      with:
+        result-encoding: string
+        script: |
+          core.summary
+              .addHeading('S3 Bucket download URLs', '4')
+              .addLink('${{ env.image_name }}.raw.xz', 'https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_time_stamp }}/${{ env.image_name }}.raw.xz')
+              .addBreak()
+              .addLink('${{ env.log_name }}.log.tar.xz', 'https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_time_stamp }}/${{ env.log_name }}.log.tar.xz')
+              .write()
+
+    - name: Send notification to Mattermost (AWS S3 links)
+      uses: mattermost/action-mattermost-notify@master
+      if: steps.publish-to-s3.outcome == 'success' && inputs.upload_to_s3 && inputs.notify_mattermost
+      with:
+        MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+        MATTERMOST_CHANNEL: ${{ vars.MATTERMOST_CHANNEL }}
+        MATTERMOST_USERNAME: ${{ github.triggering_actor }}
+        TEXT: |
+          **AlmaLinux OS 9.${{ env.version_minor }} Raspberry Pi image Build** `${{ env.date_time_stamp }}` generated by the GitHub [Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          **Image:**
+          - ${{ matrix.image_types }}: https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_time_stamp }}/${{ env.image_name }}.raw.xz
+
+          **Logs:**
+          - ${{ matrix.image_types }}: https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_time_stamp }}/${{ env.log_name }}.log.tar.xz
+
+    - name: Send notification to Mattermost (Artifacts)
+      uses: mattermost/action-mattermost-notify@master
+      if: steps.create-image.outcome == 'success' && steps.image-artifact.outcome == 'success' && inputs.store_as_artifact && inputs.notify_mattermost && ! inputs.upload_to_s3
+      with:
+        MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+        MATTERMOST_CHANNEL: ${{ vars.MATTERMOST_CHANNEL }}
+        MATTERMOST_USERNAME: ${{ github.triggering_actor }}
+        TEXT: |
+          **AlmaLinux OS 9.${{ env.version_minor }} Raspberry Pi image Build** `${{ env.date_time_stamp }}` generated by the GitHub [Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          **Image [zipped]:**
+          - ${{ matrix.image_types }}: ${{ steps.image-artifact.outputs.artifact-url }}
+
+          **Logs [zipped]:**
+          - ${{ matrix.image_types }}: ${{ steps.logs-artifact.outputs.artifact-url }}
