@@ -133,10 +133,6 @@ jobs:
         [ "x${rpi_image_resultdir}" != "x" ] && echo "rpi_image_resultdir=${rpi_image_resultdir}" >> $GITHUB_ENV
         sudo mkdir -p ${rpi_image_resultdir}
 
-        # Log file base name
-        log_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-${{ matrix.image_types }}-${{ inputs.version_major }}.${{ env.version_minor }}-${date_stamp}.aarch64"
-        [ "x${log_name}" != "x" ] && echo "log_name=${log_name}" >> $GITHUB_ENV
-
         # Image file base name
         image_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-${{ inputs.version_major }}.${{ env.version_minor }}-${date_stamp}.aarch64"
         [ "${{ matrix.image_types }}" = "gnome" ] && image_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-GNOME-${{ inputs.version_major }}.${{ env.version_minor }}-${date_stamp}.aarch64"
@@ -147,10 +143,10 @@ jobs:
         cat <<'EOF'>./appliance-creator.sh
         appliance-creator \
         -c ${{ env.kickstart }} \
-        -d -v --logfile ${{ env.rpi_image_resultdir }}/${{ env.log_name }}.log \
+        -d -v --logfile ${{ env.rpi_image_resultdir }}/${{ env.image_name }}.log \
         --cache ./cache8 --no-compress \
         -o ${{ env.rpi_image_resultdir }} --format raw --name ${{ env.image_name }} | \
-        tee ${{ env.rpi_image_resultdir }}/${{ env.log_name }}.log.2
+        tee ${{ env.rpi_image_resultdir }}/${{ env.image_name }}.log.2
         EOF
 
     - name: Update the system
@@ -191,24 +187,24 @@ jobs:
       if: success() || failure()
       run: |
         cd ${{ env.rpi_image_resultdir }}
-        tar cf ${{ env.log_name }}.log.tar ${{ env.log_name }}.log*
+        tar cf ${{ env.image_name }}.log.tar ${{ env.image_name }}.log*
 
         if [ -f ${{ env.image_name }}/${{ env.image_name }}.xml ]; then
           # Remove 'sda' in the XML to match file name
           sed -i 's/-sda//g' ${{ env.image_name }}/${{ env.image_name }}.xml
-          tar --append --file=${{ env.log_name }}.log.tar ${{ env.image_name }}/${{ env.image_name }}.xml
+          tar --append --file=${{ env.image_name }}.log.tar ${{ env.image_name }}/${{ env.image_name }}.xml
         fi
 
         # XZ default compression level is 6 (of 0-9)
-        ( [ "${{ inputs.upload_to_s3 }}" = "true" ] && xz -k -9 -e -T0 ${{ env.log_name }}.log.tar ) || true
+        ( [ "${{ inputs.upload_to_s3 }}" = "true" ] && xz -k -9 -e -T0 ${{ env.image_name }}.log.tar ) || true
 
     - uses: actions/upload-artifact@v4
       name: Store logs, xml as artifact
       id: logs-artifact
       if: success() || failure()
       with:
-        name: ${{ env.log_name }}.log.tar
-        path: ${{ env.rpi_image_resultdir }}/${{ env.log_name }}.log.tar
+        name: ${{ env.image_name }}.log.tar
+        path: ${{ env.rpi_image_resultdir }}/${{ env.image_name }}.log.tar
 
     - uses: actions/upload-artifact@v4
       name: Store image as artifact
@@ -241,7 +237,7 @@ jobs:
       if: steps.compress-image.outcome == 'success' && inputs.upload_to_s3
       run: |
         cd ${{ env.rpi_image_resultdir }}
-        for object in ${{ env.image_name }}/${{ env.image_name }}.raw.xz ${{ env.log_name }}.log.tar.xz; do
+        for object in ${{ env.image_name }}/${{ env.image_name }}.raw.xz ${{ env.image_name }}.log.tar.xz; do
           aws s3 cp ${object} s3://${{ vars.AWS_S3_BUCKET }}/${{ env.date_time_stamp }}/
           aws s3api put-object-tagging --bucket ${{ vars.AWS_S3_BUCKET }} --key ${{ env.date_time_stamp }}/$(basename ${object}) --tagging 'TagSet={Key=public,Value=yes}'
         done
@@ -256,7 +252,7 @@ jobs:
               .addHeading('S3 Bucket download URLs', '4')
               .addLink('${{ env.image_name }}.raw.xz', 'https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_time_stamp }}/${{ env.image_name }}.raw.xz')
               .addBreak()
-              .addLink('${{ env.log_name }}.log.tar.xz', 'https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_time_stamp }}/${{ env.log_name }}.log.tar.xz')
+              .addLink('${{ env.image_name }}.log.tar.xz', 'https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_time_stamp }}/${{ env.image_name }}.log.tar.xz')
               .write()
 
     - name: Send notification to Mattermost (AWS S3 links)
@@ -273,7 +269,7 @@ jobs:
           - ${{ matrix.image_types }}: https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_time_stamp }}/${{ env.image_name }}.raw.xz
 
           **Logs:**
-          - ${{ matrix.image_types }}: https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_time_stamp }}/${{ env.log_name }}.log.tar.xz
+          - ${{ matrix.image_types }}: https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_time_stamp }}/${{ env.image_name }}.log.tar.xz
 
     - name: Send notification to Mattermost (Artifacts)
       uses: mattermost/action-mattermost-notify@master
