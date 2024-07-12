@@ -2,7 +2,7 @@
 
 [![asciicast](https://asciinema.org/a/423618.svg)](https://asciinema.org/a/423618)
 
-Last Update 2024-06-24: [Changelog](#changelog) below.
+Last Update 2024-06-27: [Changelog](#changelog) below.
 
 This repository is the home of the Official AlmaLinux Raspberry Pi Image.
 
@@ -31,6 +31,10 @@ Please file any bugs on https://bugs.almalinux.org and feel free to discuss on o
 Full guide for AlmaLinux on Raspberry Pi is available here: https://wiki.almalinux.org/documentation/raspberry-pi
 
 ## Changelog
+
+### 2024-06-27
+- V3D graphic driver is now working on AL8 [#32](https://github.com/AlmaLinux/raspberry-pi/issues/32)
+
 ### 2024-06-24
 - Enable ondemand CPU frequency scaling [#48](https://github.com/AlmaLinux/raspberry-pi/issues/48)
 - V3D graphic driver is now working on AL9 [#32](https://github.com/AlmaLinux/raspberry-pi/issues/32)
