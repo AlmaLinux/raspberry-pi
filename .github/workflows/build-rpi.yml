@@ -74,7 +74,7 @@ jobs:
         ec2_security_group_id: ${{ secrets.EC2_SECURITY_GROUP_ID }}
 
         ec2_instance_type: t4g.medium       # 2 vCPU and 4 GiM Memory
-        ec2_root_disk_size_gb: "8"          # override default size which is too small for images
+        ec2_root_disk_size_gb: "16"         # override default size which is too small for images
         ec2_root_disk_ebs_class: "gp3"      # use faster and cheeper storage instead of default 'gp2'
         ec2_instance_ttl: 60                # Optional (default is 60 minutes)
         ec2_spot_instance_strategy: None    # Other options are: SpotOnly, BestEffort, MaxPerformance
