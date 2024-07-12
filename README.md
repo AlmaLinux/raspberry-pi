@@ -33,7 +33,7 @@ Full guide for AlmaLinux on Raspberry Pi is available here: https://wiki.almalin
 ## Changelog
 
 ### 2024-06-27
-- V3D graphic driver is not working on AL8 [#32](https://github.com/AlmaLinux/raspberry-pi/issues/32)
+- V3D graphic driver is now working on AL8 [#32](https://github.com/AlmaLinux/raspberry-pi/issues/32)
 
 ### 2024-06-24
 - Enable ondemand CPU frequency scaling [#48](https://github.com/AlmaLinux/raspberry-pi/issues/48)
