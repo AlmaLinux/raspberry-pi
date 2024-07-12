@@ -80,8 +80,7 @@ jobs:
         ec2_spot_instance_strategy: None    # Other options are: SpotOnly, BestEffort, MaxPerformance
         ec2_instance_tags: >                # Required for IAM role resource permission scoping
           [
-              {"Key": "Project", "Value": "GitHub Actions Self-hosted Runners"},
-              {"Key": "Owner", "Value": "${{ secrets.EC2_OWNER }}"}
+              {"Key": "Project", "Value": "GitHub Actions Self-hosted Runners"}
           ]
 
   build-image:
