@@ -1,0 +1,442 @@
+name: Build Raspberry Pi images (GitHub hosted runner)
+
+on:
+  workflow_dispatch:
+    inputs:
+
+      console:
+        description: 'console'
+        required: true
+        type: boolean
+        default: true
+
+      gnome:
+        description: 'GNOME'
+        required: true
+        type: boolean
+        default: true
+
+      version_major:
+        description: 'AlmaLinux major version'
+        required: true
+        default: '9'
+        type: choice
+        options:
+          - 9
+          - 8
+
+      store_as_artifact:
+        description: "Store images to the workflow Artifacts"
+        required: true
+        type: boolean
+        default: true
+
+      upload_to_s3:
+        description: "Upload to S3 Bucket"
+        required: true
+        type: boolean
+        default: false
+
+      notify_mattermost:
+        description: "Send notification to Mattermost"
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  build-image:
+    name: AlmaLinux ${{ inputs.version_major }} '${{ matrix.image_types }}' image
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Set image types matrix based on boolean inputs.* with true value
+        image_types: ${{ fromJSON(format('["{0}", "{1}"]', ( inputs.console && 'console' ), ( inputs.gnome && 'gnome' ) )) }}
+        exclude:
+          - image_types: 'false'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Update and install need utilities into the runner
+      run: |
+        sudo apt-get -y update
+        sudo apt-get -y install xz-utils unzip rpm
+
+    - name: Prepare AlmaLinux Minor version number
+      run: |
+        release=$(rpm -q --qf="%{VERSION}\n" https://repo.almalinux.org/almalinux/almalinux-release-latest-${{ inputs.version_major }}.aarch64.rpm 2>/dev/null)
+        version_minor=$(cut -d '.' -f 2 <<< "$release")
+        [ "x${version_minor}" != "x" ] && echo "version_minor=${version_minor}" >> $GITHUB_ENV
+
+    - name: Prepare some environment stuff
+      run: |
+        # Path to the python3-imgcreate fs.py
+        case ${{ inputs.version_major }} in
+          8)
+            python3_imgcreate=/usr/lib/python3.6/site-packages/imgcreate/
+            ;;
+          9)
+            python3_imgcreate=/usr/lib/python3.9/site-packages/imgcreate/
+            ;;
+          10)
+            python3_imgcreate=/usr/lib/python3.12/site-packages/imgcreate/
+            ;;
+          *)
+            echo "Almalinux ${{ inputs.version_major }} is not supported!" && false
+        esac
+        [ "x${python3_imgcreate}" != "x" ] && echo "python3_imgcreate=${python3_imgcreate}" >> $GITHUB_ENV
+
+        # Use proper Vagrantfile and set ENV variable of config.vm.box
+        cp -av ci/Vagrant/Vagrantfile ./
+        echo vm_box='fedora/40-cloud-base' > .env
+
+        # Date stamp
+        date_stamp=$(date -u '+%Y%m%d')
+        [ "x${date_stamp}" != "x" ] && echo "date_stamp=${date_stamp}" >> $GITHUB_ENV
+
+        # Date and time stamp
+        date_time_stamp=$(date -u '+%Y%m%d%H%M%S')
+        [ "x${date_time_stamp}" != "x" ] && echo "date_time_stamp=${date_time_stamp}" >> $GITHUB_ENV
+
+        # List of the packages to prepare build env
+        need_pkgs="appliance-tools patch"
+        [ "x${need_pkgs}" != "x" ] && echo "need_pkgs=${need_pkgs}" >> $GITHUB_ENV
+
+        # Kickstart file name
+        image_type=${{ matrix.image_types }}
+        image_type="${image_type,,}"
+        kickstart="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-${image_type}.aarch64.ks"
+        [ "x${kickstart}" != "x" ] && echo "kickstart=${kickstart}" >> $GITHUB_ENV
+
+        # Appliance Tools results directory
+        rpi_image_resultdir="/rpi-image"
+        [ "x${rpi_image_resultdir}" != "x" ] && echo "rpi_image_resultdir=${rpi_image_resultdir}" >> $GITHUB_ENV
+
+        # Image file base name
+        image_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-${{ inputs.version_major }}.${version_minor}-${date_stamp}.aarch64"
+        [ "${{ matrix.image_types }}" = "gnome" ] && image_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-GNOME-${{ inputs.version_major }}.${{ env.version_minor }}-${date_stamp}.aarch64"
+        [ "x${image_name}" != "x" ] && echo "image_name=${image_name}" >> $GITHUB_ENV
+
+    - name: Install KVM and libvirt packages
+      run: |
+        sudo apt-get -y install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
+        sudo systemctl enable --now libvirtd
+        sudo adduser "$(id -un)" libvirt
+        sudo adduser "$(id -un)" kvm
+
+    - name: Enable KVM group perms
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+
+    - name: Install Vagrant
+      run: |
+        sudo apt-get -y install vagrant
+        sudo vagrant --version
+        sudo vagrant plugin install vagrant-reload
+        sudo vagrant plugin install vagrant-env
+
+    - name: Install libvirt Plugin for Vagrant
+      run: |
+        sudo cp /etc/apt/sources.list /etc/apt/sources.list."$(date +"%F")"
+        sudo sed -i -e '/^# deb-src.*universe$/s/# //g' /etc/apt/sources.list
+        sudo apt-get -y update
+        sudo apt-get -y install nfs-kernel-server
+        sudo systemctl enable --now nfs-server
+        sudo apt-get -y build-dep vagrant ruby-libvirt
+        sudo apt-get -y install ebtables dnsmasq-base
+        sudo apt-get -y install libxslt-dev libxml2-dev libvirt-dev zlib1g-dev ruby-dev
+        sudo vagrant plugin install vagrant-libvirt
+        sudo vagrant plugin install vagrant-scp
+
+    - name: Create 'mnt' libvirt Storage Pull
+      run: |
+        sudo virsh pool-define-as --name mnt --type dir --target /mnt
+        sudo virsh pool-autostart mnt
+        sudo virsh pool-start mnt
+        sudo virsh pool-list
+
+    - name: Create files for Vagrant VM and Docker Container
+      run: |
+        # JQ file to switch into containerd image store
+        cat << EOF > containerd-snapshotter.jq
+        .features |= . + { "containerd-snapshotter": true }
+        EOF
+
+        # JQ file to relocate Docker data root directory
+        cat << EOF > data-root.jq
+        . + {"data-root": "${{ env.rpi_image_resultdir  }}/docker"}
+        EOF
+
+        # Docerfile to build image for RPi creation
+        cat << 'EOF' > Dockerfile
+        FROM almalinux:${{ inputs.version_major }}
+
+        # Set the working directory in the container
+        WORKDIR /
+
+        # Copy the RPi kickstart into the container
+        COPY ${{ env.kickstart }} .
+
+        # Copy the appliance-creator.sh into the container
+        COPY appliance-creator.sh .
+
+        # Set that we are inside container
+        RUN touch /.dockerenv
+
+        # Update system
+        RUN dnf -y -q clean all && dnf -y -q update
+
+        # Install appliance-creator packages
+        RUN dnf -y -q install epel-release
+        RUN dnf -y -q install ${{ env.need_pkgs }}
+
+        # Copy and apply patch for imgcreate/fs.py
+        COPY fs.py.patch ${{ env.python3_imgcreate }}
+        RUN cd ${{ env.python3_imgcreate }} && patch -p2 < fs.py.patch
+
+        # Build RPi image
+        RUN mkdir -p ${{ env.rpi_image_resultdir }}
+        RUN chmod +x ./appliance-creator.sh
+
+        # Default CMD
+        CMD ["/bin/bash"]
+        EOF
+
+        # The script to build RPi image
+        cat << 'EOF'> appliance-creator.sh
+        #!/bin/bash
+
+        # Create loopback device
+        mknod /dev/loop0 b 7 0
+
+        appliance-creator \
+        -c ${{ env.kickstart }} \
+        -d -v --logfile ${{ env.rpi_image_resultdir }}/${{ env.image_name }}.log \
+        --cache ./cache8 --no-compress \
+        -o ${{ env.rpi_image_resultdir }} --format raw --name ${{ env.image_name }} | \
+        tee ${{ env.rpi_image_resultdir }}/${{ env.image_name }}.log.2
+
+        # Rename image to avoid 'sda' in the file name
+        mv -f ${{ env.rpi_image_resultdir }}/${{ env.image_name }}/${{ env.image_name }}-sda.raw \
+          ${{ env.rpi_image_resultdir }}/${{ env.image_name }}.raw
+
+        mv -f ${{ env.rpi_image_resultdir }}/${{ env.image_name }}/${{ env.image_name }}.xml \
+          ${{ env.rpi_image_resultdir }}/${{ env.image_name }}.xml
+        EOF
+
+        # imgcreate/fs.py patch to lazy umount /sys
+        # https://github.com/livecd-tools/livecd-tools/issues/258
+        cat << 'EOF'> fs.py.patch
+        --- a/imgcreate/fs.py
+        +++ b/imgcreate/fs.py
+        @@ -1036,6 +1036,8 @@
+                         open(self.dest, 'a').close()
+                     else:
+                         return
+        +
+        +        logging.info("BindChrootMount mounting %s into %s" % (self.src, self.dest))
+                 args = ['mount', '--bind', self.src, self.dest]
+                 rc = call(args)
+                 if rc != 0:
+        @@ -1065,10 +1067,15 @@
+                     self.mounted = False
+                     return
+         
+        +        logging.info("BindChrootMount Unmounting directory %s" % self.dest)
+                 rc = call(['umount', self.dest])
+                 if rc != 0:
+                     call(['umount', '-l', self.dest])
+        -            raise MountError(umount_fail_fmt % self.dest)
+        +            if self.src == '/sys':
+        +                logging.info("Unable to unmount %s normally, source %s exception using lazy unmount" %
+        +                             (self.dest, self.src))
+        +            else:
+        +                raise MountError(umount_fail_fmt % self.dest)
+                 self.mounted = False
+         
+             def cleanup(self):
+        EOF
+
+    - name: Run vagrant up
+      run: sudo vagrant up fedora
+
+    - name: Tune SElinux
+      run: |
+        # set the mode SELinux is running in into Permissive
+        sudo vagrant ssh fedora -c "sudo setenforce 0"
+
+    - name: Create file-system and mount additional disk inside the Vagrant VM
+      run: |
+        # Create file-system and mount additional disk inside the Vagrant VM
+        sudo vagrant ssh fedora -c "sudo mkfs.xfs -f /dev/vdb"
+        sudo vagrant ssh fedora -c "sudo sh -c 'mkdir -p ${{ env.rpi_image_resultdir }}; mount /dev/vdb ${{ env.rpi_image_resultdir }}'"
+
+    - name: Uninstall Docker old version on the Vagrant VM
+      run: |
+        sudo vagrant ssh fedora -c "sudo dnf -y -q remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-selinux docker-engine-selinux docker-engine"
+
+    - name: Install Docker on the Vagrant VM
+      run: |
+        sudo vagrant ssh fedora -c "sudo dnf -y -q install dnf-plugins-core"
+        sudo vagrant ssh fedora -c "sudo dnf -y -q config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo"
+        sudo vagrant ssh fedora -c "sudo dnf -y -q install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+        sudo vagrant ssh fedora -c "sudo systemctl start docker"
+
+    - name: Tune the Docker Engine
+      run: |
+        sudo vagrant ssh fedora -c 'sudo dnf -y -q install jq'
+
+        # Redefine Docker data root directory
+        sudo vagrant ssh fedora -c "sudo systemctl stop docker"
+        sudo vagrant ssh fedora -c "sudo sh -c 'test -f /etc/docker/daemon.json && jq -f /vagrant/data-root.jq /etc/docker/daemon.json > ./daemon.json.${{ env.date_stamp }} || jq -n -f /vagrant/data-root.jq > ./daemon.json.${{ env.date_stamp }}; mv -f ./daemon.json.${{ env.date_stamp }} /etc/docker/daemon.json'"
+        sudo vagrant ssh fedora -c "sudo mv /var/lib/docker ${{ env.rpi_image_resultdir  }}"
+        sudo vagrant ssh fedora -c "sudo systemctl start docker"
+        sudo vagrant ssh fedora -c "docker info -f '{{ .DockerRootDir}}'"
+
+        # # Use containerd image store
+        # sudo vagrant ssh fedora -c "sudo sh -c 'test -f /etc/docker/daemon.json && jq -f /vagrant/containerd-snapshotter.jq /etc/docker/daemon.json > ./daemon.json.${{ env.date_stamp }} || jq -n -f /vagrant/containerd-snapshotter.jq > ./daemon.json.${{ env.date_stamp }}; mv -f ./daemon.json.${{ env.date_stamp }} /etc/docker/daemon.json'"
+        # sudo vagrant ssh fedora -c "sudo systemctl restart docker"
+        sudo vagrant ssh fedora -c "sudo sh -c 'usermod -aG docker vagrant && newgrp docker'"
+        # sudo vagrant ssh fedora -c "docker info -f '{{ .DriverStatus }}'"
+
+    - name: Install cross-platform emulator collection on the Vagrant VM
+      run: |
+        sudo vagrant ssh fedora -c "sudo dnf -y -q install qemu-user-static"
+        # sudo vagrant ssh fedora -c "git clone https://github.com/tonistiigi/binfmt.git"
+        # sudo vagrant ssh fedora -c "cd binfmt/; docker run --privileged --rm tonistiigi/binfmt --install arm64"
+
+    - name: Run docker build to prepare AlmaLinux based Docker image
+      run: |
+        sudo vagrant ssh fedora -c "cd /vagrant && docker buildx build --platform linux/arm64 --load -t rpi-appliance-creator ."
+
+        docker_image_id=$(sudo vagrant ssh fedora -c "docker images -q rpi-appliance-creator")
+        [ "x${docker_image_id}" != "x" ] && echo "docker_image_id=${docker_image_id}" >> $GITHUB_ENV
+
+    - name: Run appliance-creator inside the Docker container
+      id: create-image
+      run: |
+        sudo vagrant ssh fedora -c "docker run --privileged=true --platform=linux/arm64 ${{ env.docker_image_id }} /bin/bash ./appliance-creator.sh"
+
+        docker_container_id=$(sudo vagrant ssh fedora -c "docker ps -a --format '{{.ID}}'")
+        [ "x${docker_container_id}" != "x" ] && echo "docker_container_id=${docker_container_id}" >> $GITHUB_ENV
+
+    - name: Get the RPi image from the Container to Vagrant VM, then to the runner
+      run: |
+        for file in ${{ env.image_name }}.raw ${{ env.image_name }}.xml ${{ env.image_name }}.log ${{ env.image_name }}.log.2; do
+          sudo vagrant ssh fedora -c "sudo docker cp ${{ env.docker_container_id }}:${{ env.rpi_image_resultdir }}/${file} ${{ env.rpi_image_resultdir }}/"
+        done
+
+        sudo vagrant scp fedora:${{ env.rpi_image_resultdir }}/${{ env.image_name }}.* .
+
+    - name: Compress image
+      if: steps.create-image.outcome == 'success' && inputs.upload_to_s3
+      id: compress-image
+      run: |
+        # XZ default compression level is 6 (of 0-9)
+        ( [ "${{ inputs.upload_to_s3 }}" = "true" ] && xz -k -9 -e -T0 ${{ env.image_name }}.raw ) || true
+
+    - name: Collect and compress logs, xml
+      id: compress-logs
+      if: success() || failure()
+      run: |
+        tar cf ${{ env.image_name }}.log.tar ${{ env.image_name }}.log*
+
+        if [ -f ${{ env.image_name }}.xml ]; then
+          # Remove 'sda' in the XML to match file name
+          sed -i 's/-sda//g' ${{ env.image_name }}.xml
+          tar --append --file=${{ env.image_name }}.log.tar ${{ env.image_name }}.xml
+        fi
+
+        # XZ default compression level is 6 (of 0-9)
+        ( [ "${{ inputs.upload_to_s3 }}" = "true" ] && xz -k -9 -e -T0 ${{ env.image_name }}.log.tar ) || true
+
+    - uses: actions/upload-artifact@v4
+      name: Store logs, xml as artifact
+      id: logs-artifact
+      if: success() || failure()
+      with:
+        name: ${{ env.image_name }}.log.tar
+        path: ${{ env.image_name }}.log.tar
+
+    - uses: actions/upload-artifact@v4
+      name: Store image as artifact
+      id: image-artifact
+      if: steps.create-image.outcome == 'success' && inputs.store_as_artifact
+      with:
+        name: "${{ env.image_name }}.raw"
+        compression-level: 1
+        path: ${{ env.image_name }}.raw
+
+    - name: Configure AWS credentials
+      if: steps.compress-image.outcome == 'success' && inputs.upload_to_s3
+      uses: aws-actions/configure-aws-credentials@v4.0.2
+      with:
+        aws-access-key-id: ${{ secrets.S3_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Install aws CLI
+      if: steps.compress-image.outcome == 'success' && inputs.upload_to_s3
+      run: |
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        unzip -qq awscliv2.zip
+        sudo ./aws/install --update
+        aws --version
+
+    - name: Publish to S3 Bucket and put object tagging with aws CLI
+      id: publish-to-s3
+      if: steps.compress-image.outcome == 'success' && inputs.upload_to_s3
+      run: |
+        # cd ${{ env.rpi_image_resultdir }}
+        for object in ${{ env.image_name }}.raw.xz ${{ env.image_name }}.log.tar.xz; do
+          aws s3 cp ${object} s3://${{ vars.AWS_S3_BUCKET }}/${{ env.date_time_stamp }}/
+          aws s3api put-object-tagging --bucket ${{ vars.AWS_S3_BUCKET }} --key ${{ env.date_time_stamp }}/$(basename ${object}) --tagging 'TagSet={Key=public,Value=yes}'
+        done
+
+    - name: Put S3 Bucket download URLs
+      if: steps.publish-to-s3.outcome == 'success' && inputs.upload_to_s3
+      uses: actions/github-script@v7
+      with:
+        result-encoding: string
+        script: |
+          core.summary
+              .addHeading('S3 Bucket download URLs', '4')
+              .addLink('${{ env.image_name }}.raw.xz', 'https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_time_stamp }}/${{ env.image_name }}.raw.xz')
+              .addBreak()
+              .addLink('${{ env.image_name }}.log.tar.xz', 'https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_time_stamp }}/${{ env.image_name }}.log.tar.xz')
+              .write()
+
+    - name: Send notification to Mattermost (AWS S3 links)
+      uses: mattermost/action-mattermost-notify@master
+      if: steps.publish-to-s3.outcome == 'success' && inputs.upload_to_s3 && inputs.notify_mattermost
+      with:
+        MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+        MATTERMOST_CHANNEL: ${{ vars.MATTERMOST_CHANNEL }}
+        MATTERMOST_USERNAME: ${{ github.triggering_actor }}
+        TEXT: |
+          **AlmaLinux OS ${{ inputs.version_major }}.${{ env.version_minor }} Raspberry Pi image Build** `${{ env.date_time_stamp }}` generated by the GitHub [Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          **Image:**
+          - ${{ matrix.image_types }}: https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_time_stamp }}/${{ env.image_name }}.raw.xz
+
+          **Logs:**
+          - ${{ matrix.image_types }}: https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_time_stamp }}/${{ env.image_name }}.log.tar.xz
+
+    - name: Send notification to Mattermost (Artifacts)
+      uses: mattermost/action-mattermost-notify@master
+      if: steps.create-image.outcome == 'success' && steps.image-artifact.outcome == 'success' && inputs.store_as_artifact && inputs.notify_mattermost && ! inputs.upload_to_s3
+      with:
+        MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+        MATTERMOST_CHANNEL: ${{ vars.MATTERMOST_CHANNEL }}
+        MATTERMOST_USERNAME: ${{ github.triggering_actor }}
+        TEXT: |
+          **AlmaLinux OS ${{ inputs.version_major }}.${{ env.version_minor }} Raspberry Pi image Build** `${{ env.date_time_stamp }}` generated by the GitHub [Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          **Image [zipped]:**
+          - ${{ matrix.image_types }}: ${{ steps.image-artifact.outputs.artifact-url }}
+
+          **Logs [zipped]:**
+          - ${{ matrix.image_types }}: ${{ steps.logs-artifact.outputs.artifact-url }}
