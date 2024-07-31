@@ -1,0 +1,24 @@
+Vagrant.configure("2") do |config|
+
+    config.env.enable
+    config.vm.box = ENV['vm_box']
+
+    config.vm.define 'fedora'
+
+    config.vm.provider "libvirt" do |v|
+        v.memory = 12288
+        v.cpus = 4
+
+        # The disk on 'mnt' pool for build results
+        v.storage_pool_name = "mnt"
+        v.storage :file, :size => '40G'
+    end
+
+    config.vm.provision "shell", inline: <<-SHELL
+        sudo dnf -y update
+    SHELL
+
+    # Reboot after update
+    config.vm.provision :reload
+
+end
