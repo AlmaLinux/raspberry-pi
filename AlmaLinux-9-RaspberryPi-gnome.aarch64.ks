@@ -57,6 +57,7 @@ cloud-utils-growpart
 e2fsprogs
 net-tools
 linux-firmware-raspberrypi
+raspberrypi-sys-mods
 raspberrypi-userland
 raspberrypi2-firmware
 raspberrypi2-kernel4
@@ -128,7 +129,7 @@ EOF
 
 # Kernel command line string
 cat > /boot/cmdline.txt << EOF
-console=ttyS0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait
+console=serial0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait
 EOF
 
 # Create and initialize swapfile

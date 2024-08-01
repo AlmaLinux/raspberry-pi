@@ -32,6 +32,9 @@ Full guide for AlmaLinux on Raspberry Pi is available here: https://wiki.almalin
 
 ## Changelog
 
+### 2024-07-24
+- Adjust udev rules to enable serial console and bluetooth concurrently on Pi 5
+
 ### 2024-06-27
 - V3D graphic driver is now working on AL8 [#32](https://github.com/AlmaLinux/raspberry-pi/issues/32)
 
