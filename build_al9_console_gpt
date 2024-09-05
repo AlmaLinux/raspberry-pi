@@ -1,0 +1,13 @@
+SCRIPT_DIR=$(dirname $(readlink -f $0))
+DATE=$(date +%Y%m%d-%H%M%S)
+
+VARIANT=AlmaLinux-9-RaspberryPi-console-gpt
+
+sudo appliance-creator \
+    -c ${SCRIPT_DIR}/kickstart/${VARIANT}.aarch64.ks \
+    -d -v --logfile /var/tmp/${VARIANT}-${DATE}.aarch64.ks.log \
+    --cache ./cache9 --no-compress \
+    -o $(pwd) --format raw --name ${VARIANT}-${DATE}.aarch64 | \
+    tee /var/tmp/${VARIANT}-${DATE}.aarch64.ks.log.2
+
+
