@@ -1,19 +1,12 @@
-# To build an image run the following as root:
-# appliance-creator -c AlmaLinux-8-RaspberryPi-gnome.aarch64.ks \
-#    -d -v --logfile /var/tmp/AlmaLinux-8-RaspberryPi-gnome-$(date +%Y%m%d-%s).aarch64.ks.log \
-#    --cache ./cache8 --no-compress \
-#    -o $(pwd) --format raw --name AlmaLinux-8-RaspberryPi-gnome-$(date +%Y%m%d-%s).aarch64 | \
-#    tee /var/tmp/AlmaLinux-8-RaspberryPi-gnome-$(date +%Y%m%d-%s).aarch64.ks.log.2
-#
 # Basic setup information
-url --url="https://repo.almalinux.org/almalinux/8/BaseOS/aarch64/os/"
+url --url="https://repo.almalinux.org/almalinux/9/BaseOS/aarch64/os/"
 # root password is locked but can be reset by cloud-init later
 rootpw --plaintext --lock almalinux
 
 # Repositories to use
-repo --name="baseos"    --baseurl=https://repo.almalinux.org/almalinux/8/BaseOS/aarch64/os/
-repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/8/AppStream/aarch64/os/
-repo --name="raspberrypi" --baseurl=https://repo.almalinux.org/almalinux/8/raspberrypi/aarch64/os/
+repo --name="baseos"    --baseurl=https://repo.almalinux.org/almalinux/9/BaseOS/aarch64/os/
+repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/9/AppStream/aarch64/os/
+repo --name="raspberrypi" --baseurl=https://repo.almalinux.org/almalinux/9/raspberrypi/aarch64/os/
 
 # install
 keyboard us --xlayouts=us --vckeymap=us
@@ -21,26 +14,19 @@ timezone --isUtc --nontp UTC
 selinux --enforcing
 firewall --enabled --port=22:tcp
 network --bootproto=dhcp --device=link --activate --onboot=on
-services --enabled=sshd,NetworkManager,chronyd,bluetooth
+services --enabled=sshd,NetworkManager,chronyd,bluetooth,cpupower
 shutdown
 bootloader --location=mbr
 lang en_US.UTF-8
 
 # Disk setup
 clearpart --initlabel --all
-part /boot --asprimary --fstype=vfat --size=500 --label=boot --ondisk=sda
-part / --asprimary --fstype=ext4 --size=4700 --label=rootfs --ondisk=sda
+part /boot --asprimary --fstype=vfat --size=300 --label=boot --ondisk=sda
+part / --asprimary --fstype=ext4 --size=2400 --label=rootfs --ondisk=sda
 
 # Package setup
 %packages
 @core
-@gnome-desktop
-firefox
-dejavu-sans-fonts
-dejavu-sans-mono-fonts
-dejavu-serif-fonts
-aajohan-comfortaa-fonts
-abattis-cantarell-fonts
 -caribou*
 -gnome-shell-browser-plugin
 -java-1.6.0-*
@@ -48,26 +34,9 @@ abattis-cantarell-fonts
 -java-11-*
 -kernel-tools
 -python*-caribou*
--iwl1000-firmware
--iwl100-firmware
--iwl105-firmware
--iwl135-firmware
--iwl2000-firmware
--iwl2030-firmware
--iwl3160-firmware
--iwl3945-firmware
--iwl4965-firmware
--iwl5000-firmware
--iwl5150-firmware
--iwl6000-firmware
--iwl6000g2a-firmware
--iwl6000g2b-firmware
--iwl6050-firmware
--iwl7260-firmware
 NetworkManager-wifi
 almalinux-release-raspberrypi
 bluez
-binutils
 chrony
 cloud-init
 cloud-utils-growpart
@@ -80,12 +49,13 @@ raspberrypi2-firmware
 raspberrypi2-kernel4
 raspberrypi2-kernel4-tools
 nano
+libgpiod-utils
 %end
 
 %post
 # Mandatory README file
 cat >/boot/README.txt << EOF
-== AlmaLinux 8 ==
+== AlmaLinux 9 ==
 
 To login to Raspberry Pi via SSH, you need to register SSH public key *before*
 inserting SD card to Raspberry Pi. Edit user-data file and put SSH public key
@@ -126,21 +96,14 @@ EOF
 
 cat > /boot/config.txt << EOF
 # This file is provided as a placeholder for user options
-# AlmaLinux - few default config options for better graphics support
-[all]
-disable_overscan=1
-dtoverlay=vc4-kms-v3d
-camera_auto_detect=0
-gpu_mem=128
-# enable serial console
-enable_uart=1
+# AlmaLinux - few default config options
 
-## AlmaLinux - can enable this for Pi 4
 [pi4]
-#max_framebuffers=2
 arm_boost=1
 
 [all]
+# enable serial console
+enable_uart=1
 EOF
 
 # Kernel command line string
@@ -155,17 +118,6 @@ cat >> /etc/fstab << EOF
 /swapfile	none	swap	defaults	0	0
 EOF
 
-cat > /etc/X11/xorg.conf.d/99-vc4.conf << EOF
-# Workaround for GUI on RPi 5
-# https://forums.raspberrypi.com/viewtopic.php?p=2159161#p2159161
-Section "OutputClass"
-	Identifier "vc4"
-	MatchDriver "vc4"
-	Driver "modesetting"
-	Option "PrimaryGPU" "true"
-EndSection
-EOF
-
 # Remove ifcfg-link on pre generated images
 rm -f /etc/sysconfig/network-scripts/ifcfg-link
 
@@ -176,15 +128,9 @@ echo '%_install_langs C.utf8' > /etc/rpm/macros.image-language-conf
 echo 'LANG="C.utf8"' >  /etc/locale.conf
 rpm --rebuilddb
 
-# activate gui
-systemctl set-default graphical.target
-
 # Remove machine-id on pre generated images
 rm -f /etc/machine-id
 touch /etc/machine-id
-# print disk usage
-df
-#
 %end
 
 %post --nochroot --erroronfail
