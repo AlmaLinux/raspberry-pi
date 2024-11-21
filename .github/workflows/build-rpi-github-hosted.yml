@@ -114,7 +114,7 @@ jobs:
         [ "x${date_time_stamp}" != "x" ] && echo "date_time_stamp=${date_time_stamp}" >> $GITHUB_ENV
 
         # List of the packages to prepare build env
-        need_pkgs="appliance-tools patch"
+        need_pkgs="appliance-tools patch gdisk sed util-linux-core"
         [ "x${need_pkgs}" != "x" ] && echo "need_pkgs=${need_pkgs}" >> $GITHUB_ENV
 
         # Kickstart file name
