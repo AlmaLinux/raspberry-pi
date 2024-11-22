@@ -1,0 +1,44 @@
+#!/bin/bash
+# vim: ts=4 sw=4 expandtab
+
+SCRIPT_DIR=$(dirname $(readlink -f $0))
+DATE=$(date +%Y%m%d-%H%M%S)
+
+readarray -t VARIANTS < <(ls -1 ${SCRIPT_DIR}/kickstart | sed -e 's|.aarch64.ks||')
+
+show_usage()
+{
+    echo "Usage: $0 <variant>"
+    echo
+    echo "Available variants are:"
+    for variant in ${VARIANTS[@]}
+    do
+        echo "    $variant"
+    done
+    echo
+}
+
+if [ $# -ne 1 ]
+then
+    show_usage
+    exit 1
+fi
+
+VARIANT=${1}
+VER=$(echo $VARIANT | sed -e 's|[^0-9]||g')
+
+if [ ! -f ${SCRIPT_DIR}/kickstart/${VARIANT}.aarch64.ks ]
+then
+    echo "Error: Invalid variant!"
+    echo
+    show_usage
+    exit 1
+fi
+
+sudo appliance-creator \
+    -c ${SCRIPT_DIR}/kickstart/${VARIANT}.aarch64.ks \
+    -d -v --logfile /var/tmp/${VARIANT}-${DATE}.aarch64.ks.log \
+    --cache ${SCRIPT_DIR}/cache${VER} --no-compress \
+    -o $(pwd) --format raw --name ${VARIANT}-${DATE}.aarch64 | \
+    tee /var/tmp/${VARIANT}-${DATE}.aarch64.ks.log.2
+
