@@ -68,6 +68,9 @@ jobs:
         exclude:
           - image_types: 'false'
           - partitioning: 'false'
+          # 8 has no GPT image
+          - version_major: '8'
+            partitioning: 'gpt'
 
     steps:
     - uses: actions/checkout@v4
