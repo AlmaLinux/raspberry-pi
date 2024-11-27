@@ -16,6 +16,18 @@ on:
         type: boolean
         default: true
 
+      mbr:
+        description: 'MBR'
+        required: true
+        type: boolean
+        default: true
+
+      gpt:
+        description: 'GPT'
+        required: true
+        type: boolean
+        default: true
+
       version_major:
         description: 'AlmaLinux major version'
         required: true
@@ -45,15 +57,20 @@ on:
 
 jobs:
   build-image:
-    name: AlmaLinux ${{ inputs.version_major }} '${{ matrix.image_types }}' image
+    name: AlmaLinux ${{ inputs.version_major }} '${{ matrix.image_types }}' ${{ matrix.partitioning }} image
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         # Set image types matrix based on boolean inputs.* with true value
         image_types: ${{ fromJSON(format('["{0}", "{1}"]', ( inputs.console && 'console' ), ( inputs.gnome && 'gnome' ) )) }}
+        partitioning: ${{ fromJSON(format('["{0}", "{1}"]', ( inputs.mbr && 'mbr' ), ( inputs.gpt && 'gpt' ) )) }}
         exclude:
           - image_types: 'false'
+          - partitioning: 'false'
+          # 8 has no GPT image
+          - version_major: '8'
+            partitioning: 'gpt'
 
     steps:
     - uses: actions/checkout@v4
@@ -100,13 +117,15 @@ jobs:
         [ "x${date_time_stamp}" != "x" ] && echo "date_time_stamp=${date_time_stamp}" >> $GITHUB_ENV
 
         # List of the packages to prepare build env
-        need_pkgs="appliance-tools patch"
+        need_pkgs="appliance-tools patch gdisk sed util-linux-core"
         [ "x${need_pkgs}" != "x" ] && echo "need_pkgs=${need_pkgs}" >> $GITHUB_ENV
 
         # Kickstart file name
         image_type=${{ matrix.image_types }}
         image_type="${image_type,,}"
-        kickstart="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-${image_type}.aarch64.ks"
+        partitioning=${{ matrix.partitioning }}
+        partitioning="${partitioning,,}"
+        kickstart="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-${image_type}-${partitioning}.aarch64.ks"
         [ "x${kickstart}" != "x" ] && echo "kickstart=${kickstart}" >> $GITHUB_ENV
 
         # Appliance Tools results directory
@@ -114,8 +133,8 @@ jobs:
         [ "x${rpi_image_resultdir}" != "x" ] && echo "rpi_image_resultdir=${rpi_image_resultdir}" >> $GITHUB_ENV
 
         # Image file base name
-        image_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-${{ inputs.version_major }}.${version_minor}-${date_stamp}.aarch64"
-        [ "${{ matrix.image_types }}" = "gnome" ] && image_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-GNOME-${{ inputs.version_major }}.${{ env.version_minor }}-${date_stamp}.aarch64"
+        image_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-${partitioning}-${{ inputs.version_major }}.${version_minor}-${date_stamp}.aarch64"
+        [ "${{ matrix.image_types }}" = "gnome" ] && image_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-GNOME-${partitioning}-${{ inputs.version_major }}.${{ env.version_minor }}-${date_stamp}.aarch64"
         [ "x${image_name}" != "x" ] && echo "image_name=${image_name}" >> $GITHUB_ENV
 
     - name: Install KVM and libvirt packages
@@ -178,7 +197,7 @@ jobs:
         WORKDIR /
 
         # Copy the RPi kickstart into the container
-        COPY ${{ env.kickstart }} .
+        COPY kickstart/${{ env.kickstart }} .
 
         # Copy the appliance-creator.sh into the container
         COPY appliance-creator.sh .

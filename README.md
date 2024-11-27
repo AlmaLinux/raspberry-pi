@@ -32,6 +32,11 @@ Full guide for AlmaLinux on Raspberry Pi is available here: https://wiki.almalin
 
 ## Changelog
 
+### 2024-11-21
+- Add new images with GUID partition table for AL9
+- Update Github workflow to enable building both GPT and MBR images 
+- Merge build script into one
+
 ### 2024-07-24
 - Adjust udev rules to enable serial console and bluetooth concurrently on Pi 5
 

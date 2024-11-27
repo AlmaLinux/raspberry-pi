@@ -1,10 +1,3 @@
-# To build an image run the following as root:
-# appliance-creator -c AlmaLinux-9-RaspberryPi-gnome.aarch64.ks \
-#    -d -v --logfile /var/tmp/AlmaLinux-9-RaspberryPi-gnome-$(date +%Y%m%d-%s).aarch64.ks.log \
-#    --cache ./cache9 --no-compress \
-#    -o $(pwd) --format raw --name AlmaLinux-9-RaspberryPi-gnome-$(date +%Y%m%d-%s).aarch64 | \
-#    tee /var/tmp/AlmaLinux-9-RaspberryPi-gnome-$(date +%Y%m%d-%s).aarch64.ks.log.2
-#
 # Basic setup information
 url --url="https://repo.almalinux.org/almalinux/9/BaseOS/aarch64/os/"
 # root password is locked but can be reset by cloud-init later
@@ -23,13 +16,13 @@ firewall --enabled --port=22:tcp
 network --bootproto=dhcp --device=link --activate --onboot=on
 services --enabled=sshd,NetworkManager,chronyd,bluetooth,cpupower
 shutdown
-bootloader --location=mbr
+bootloader --location=none
 lang en_US.UTF-8
 
 # Disk setup
-clearpart --initlabel --all
-part /boot --asprimary --fstype=vfat --size=500 --label=boot --ondisk=sda
-part / --asprimary --fstype=ext4 --size=4400 --label=rootfs --ondisk=sda
+clearpart --initlabel --all --disklabel=gpt
+part /boot --fstype=vfat --size=500 --label=cidata --ondisk=sda
+part / --fstype=ext4 --size=4400 --label=rootfs --ondisk=sda
 
 # Package setup
 %packages
@@ -129,7 +122,7 @@ EOF
 
 # Kernel command line string
 cat > /boot/cmdline.txt << EOF
-console=serial0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait
+console=ttyS0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait
 EOF
 
 # Create and initialize swapfile
@@ -161,11 +154,10 @@ df
 
 %post --nochroot --erroronfail
 
-/usr/sbin/blkid
 LOOPPART=$(cat /proc/self/mounts |/usr/bin/grep '^\/dev\/mapper\/loop[0-9]p[0-9] '"$INSTALL_ROOT " | /usr/bin/sed 's/ .*//g')
 VFATPART=$(cat /proc/self/mounts |/usr/bin/grep '^\/dev\/mapper\/loop[0-9]p[0-9] '"$INSTALL_ROOT"/boot | /usr/bin/sed 's/ .*//g')
 echo "Found loop part for PARTUUID $LOOPPART"
-BOOTDEV=$(/usr/sbin/blkid $LOOPPART|grep 'PARTUUID="........-02"'|sed 's/.*PARTUUID/PARTUUID/g;s/ .*//g;s/"//g')
+BOOTDEV=$(/usr/sbin/blkid $LOOPPART | egrep 'PARTUUID="([0-9a-f]{8})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{12})"' | sed 's/.*PARTUUID/PARTUUID/g;s/ .*//g;s/"//g')
 echo "no chroot selected bootdev=$BOOTDEV"
 if [ -n "$BOOTDEV" ];then
     cat $INSTALL_ROOT/boot/cmdline.txt
@@ -178,6 +170,16 @@ fi
 # This didn't work for some reasons so using fatlabel instead.
 #    part /boot --asprimary --fstype=vfat --mkfsoptions="-n CIDATA"
 /usr/sbin/fatlabel $VFATPART "CIDATA"
+# Kickstart sets the type of a VFAT partition with mountpoint /boot to EF00
+# if a GUID partition table is used, so reset the partition type to 0700.
+VFATPARTNUM=$(echo ${VFATPART} | sed -n 's/.*p\([0-9]\+\)$/\1/p')
+VFATPARTDEV=$(echo ${VFATPART//\/mapper/} | sed 's/p[0-9]*$//')
+if [ -b "${VFATPARTDEV}p${VFATPARTNUM}" -o -b "${VFATPARTDEV}${VFATPARTNUM}" ]; then
+echo /usr/sbin/sgdisk --typecode="${VFATPARTNUM}:0700" ${VFATPARTDEV}
+/usr/sbin/sgdisk --typecode="${VFATPARTNUM}:0700" ${VFATPARTDEV}
+fi
+
+/usr/sbin/sgdisk -p ${VFATPARTDEV}
 
 cat $INSTALL_ROOT/boot/cmdline.txt
 
