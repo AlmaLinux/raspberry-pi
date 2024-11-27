@@ -16,6 +16,18 @@ on:
         type: boolean
         default: true
 
+      mbr:
+        description: 'MBR'
+        required: true
+        type: boolean
+        default: true
+
+      gpt:
+        description: 'GPT'
+        required: true
+        type: boolean
+        default: true
+
       version_major:
         description: 'AlmaLinux major version'
         required: true
@@ -47,17 +59,23 @@ jobs:
 
   start-runner:
     timeout-minutes: 10              # normally it only takes 1-2 minutes
-    name: EC2 self-hosted runner for '${{ matrix.image_types }}'
+    name: EC2 runner for '${{ matrix.image_types }}' ${{ matrix.partitioning }}
     runs-on: ubuntu-latest
     permissions:
       actions: write
     strategy:
       fail-fast: false
       matrix:
-        # Set image types matrix based on boolean inputs.* with true value
+        # Set matrix based on boolean inputs.* with true value
         image_types: ${{ fromJSON(format('["{0}", "{1}"]', ( inputs.console && 'console' ), ( inputs.gnome && 'gnome' ) )) }}
+        partitioning: ${{ fromJSON(format('["{0}", "{1}"]', ( inputs.mbr && 'mbr' ), ( inputs.gpt && 'gpt' ) )) }}
+        version_major: ${{ fromJSON(format('["{0}"]', inputs.version_major )) }}
         exclude:
           - image_types: 'false'
+          - partitioning: 'false'
+          # 8 has no GPT image
+          - version_major: '8'
+            partitioning: 'gpt'
 
     steps:
 
@@ -84,17 +102,23 @@ jobs:
           ]
 
   build-image:
-    name: AlmaLinux ${{ inputs.version_major }} '${{ matrix.image_types }}' image
+    name: ${{ inputs.version_major }} '${{ matrix.image_types }}' ${{ matrix.partitioning }} image
     runs-on: ${{ github.run_id }}
     needs: start-runner # required to start the main job when the runner is ready
     strategy:
       fail-fast: false
       # max-parallel: 1
       matrix:
-        # Set image types matrix based on boolean inputs.* with true value
+        # Set matrix based on boolean inputs.* with true value
         image_types: ${{ fromJSON(format('["{0}", "{1}"]', ( inputs.console && 'console' ), ( inputs.gnome && 'gnome' ) )) }}
+        partitioning: ${{ fromJSON(format('["{0}", "{1}"]', ( inputs.mbr && 'mbr' ), ( inputs.gpt && 'gpt' ) )) }}
+        version_major: ${{ fromJSON(format('["{0}"]', inputs.version_major )) }}
         exclude:
           - image_types: 'false'
+          - partitioning: 'false'
+          # 8 has no GPT image
+          - version_major: '8'
+            partitioning: 'gpt'
 
     steps:
 
@@ -119,29 +143,28 @@ jobs:
 
         # List of the packages to prepare build env
         need_pkgs="appliance-tools xz unzip"
-        [ "x${need_pkgs}" != "x" ] && echo "need_pkgs=${need_pkgs}" >> $GITHUB_ENV
+        [ "${{ matrix.partitioning }}" = "gpt" ] && need_pkgs="${need_pkgs} gdisk util-linux-core"
+        echo "need_pkgs=${need_pkgs}" >> $GITHUB_ENV
 
         # Kickstart file name
-        image_type=${{ matrix.image_types }}
-        image_type="${image_type,,}"
-        kickstart="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-${image_type}.aarch64.ks"
-        [ "x${kickstart}" != "x" ] && echo "kickstart=${kickstart}" >> $GITHUB_ENV
+        kickstart="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-${{ matrix.image_types }}-${{ matrix.partitioning }}.aarch64.ks"
+        echo "kickstart=${kickstart}" >> $GITHUB_ENV
 
         # Appliance Tools results directory
         rpi_image_resultdir="/rpi-image"
-        [ "x${rpi_image_resultdir}" != "x" ] && echo "rpi_image_resultdir=${rpi_image_resultdir}" >> $GITHUB_ENV
+        echo "rpi_image_resultdir=${rpi_image_resultdir}" >> $GITHUB_ENV
         sudo mkdir -p ${rpi_image_resultdir}
 
         # Image file base name
-        image_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-${{ inputs.version_major }}.${{ env.version_minor }}-${date_stamp}.aarch64"
-        [ "${{ matrix.image_types }}" = "gnome" ] && image_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-GNOME-${{ inputs.version_major }}.${{ env.version_minor }}-${date_stamp}.aarch64"
-        [ "x${image_name}" != "x" ] && echo "image_name=${image_name}" >> $GITHUB_ENV
+        image_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-${{ matrix.partitioning }}-${{ inputs.version_major }}.${{ env.version_minor }}-${date_stamp}.aarch64"
+        [ "${{ matrix.image_types }}" = "gnome" ] && image_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-GNOME-${{ matrix.partitioning }}-${{ inputs.version_major }}.${{ env.version_minor }}-${date_stamp}.aarch64"
+        echo "image_name=${image_name}" >> $GITHUB_ENV
 
     - name: Generate appliance creator script
       run: |
         cat <<'EOF'>./appliance-creator.sh
         appliance-creator \
-        -c ${{ env.kickstart }} \
+        -c kickstart/${{ env.kickstart }} \
         -d -v --logfile ${{ env.rpi_image_resultdir }}/${{ env.image_name }}.log \
         --cache ./cache8 --no-compress \
         -o ${{ env.rpi_image_resultdir }} --format raw --name ${{ env.image_name }} | \
@@ -264,11 +287,11 @@ jobs:
         TEXT: |
           **AlmaLinux OS ${{ inputs.version_major }}.${{ env.version_minor }} Raspberry Pi image Build** `${{ env.date_time_stamp }}` generated by the GitHub [Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
-          **Image:**
-          - ${{ matrix.image_types }}: https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_time_stamp }}/${{ env.image_name }}.raw.xz
+          :almalinux: **${{ matrix.image_types }} ${{ matrix.partitioning }}**
 
-          **Logs:**
-          - ${{ matrix.image_types }}: https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_time_stamp }}/${{ env.image_name }}.log.tar.xz
+          - Image: [${{ env.image_name }}.raw.xz](https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_time_stamp }}/${{ env.image_name }}.raw.xz)
+
+          - Logs: [${{ env.image_name }}.log.tar.xz](https://${{ vars.AWS_S3_BUCKET }}.s3-accelerate.dualstack.amazonaws.com/${{ env.date_time_stamp }}/${{ env.image_name }}.log.tar.xz)
 
     - name: Send notification to Mattermost (Artifacts)
       uses: mattermost/action-mattermost-notify@master
@@ -280,8 +303,8 @@ jobs:
         TEXT: |
           **AlmaLinux OS ${{ inputs.version_major }}.${{ env.version_minor }} Raspberry Pi image Build** `${{ env.date_time_stamp }}` generated by the GitHub [Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
-          **Image [zipped]:**
-          - ${{ matrix.image_types }}: ${{ steps.image-artifact.outputs.artifact-url }}
+          :almalinux: **${{ matrix.image_types }} ${{ matrix.partitioning }}**
 
-          **Logs [zipped]:**
-          - ${{ matrix.image_types }}: ${{ steps.logs-artifact.outputs.artifact-url }}
+          - Image: [${{ env.image_name }}.raw.zip](${{ steps.image-artifact.outputs.artifact-url }})
+
+          - Logs: [${{ env.image_name }}.log.tar.zip](${{ steps.logs-artifact.outputs.artifact-url }})
