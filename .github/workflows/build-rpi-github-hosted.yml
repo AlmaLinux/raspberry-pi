@@ -58,7 +58,7 @@ on:
 jobs:
   build-image:
     name: ${{ inputs.version_major }} '${{ matrix.image_types }}' ${{ matrix.partitioning }} image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -150,19 +150,23 @@ jobs:
 
     - name: Install Vagrant
       run: |
+        # Use Vagrant packages provided by Hashicorp as ubuntu-24.04 doesn't build ones
+        wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+        sudo apt-get -y update
         sudo apt-get -y install vagrant
-        sudo vagrant --version
+
         sudo vagrant plugin install vagrant-reload
         sudo vagrant plugin install vagrant-env
 
     - name: Install libvirt Plugin for Vagrant
       run: |
-        sudo cp /etc/apt/sources.list /etc/apt/sources.list."$(date +"%F")"
-        sudo sed -i -e '/^# deb-src.*universe$/s/# //g' /etc/apt/sources.list
+        sudo cp /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list.d/ubuntu.sources."$(date +"%F")"
+        sudo sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
         sudo apt-get -y update
         sudo apt-get -y install nfs-kernel-server
         sudo systemctl enable --now nfs-server
-        sudo apt-get -y build-dep vagrant ruby-libvirt
+        sudo apt-get -y build-dep ruby-libvirt
         sudo apt-get -y install ebtables dnsmasq-base
         sudo apt-get -y install libxslt-dev libxml2-dev libvirt-dev zlib1g-dev ruby-dev
         sudo vagrant plugin install vagrant-libvirt
@@ -278,7 +282,11 @@ jobs:
         EOF
 
     - name: Run vagrant up
-      run: sudo vagrant up fedora
+      run: |
+        # TODO to solve "undefined method `exists?'" error
+        sudo sed -i 's/exists?/exist?/g' /root/.vagrant.d/gems/3.3.6/gems/dotenv-0.11.1/lib/dotenv.rb
+
+        sudo vagrant up fedora
 
     - name: Tune SElinux
       run: |

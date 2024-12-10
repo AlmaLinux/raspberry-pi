@@ -60,7 +60,7 @@ jobs:
   start-runner:
     timeout-minutes: 10              # normally it only takes 1-2 minutes
     name: EC2 runner for '${{ matrix.image_types }}' ${{ matrix.partitioning }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       actions: write
     strategy:
