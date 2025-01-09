@@ -25,7 +25,7 @@ then
 fi
 
 VARIANT=${1}
-VER=$(echo $VARIANT | sed -e 's|[^0-9]||g')
+VER=$(echo $VARIANT | sed -e 's|[^0-9k?]||g')
 
 if [ ! -f ${SCRIPT_DIR}/kickstart/${VARIANT}.aarch64.ks ]
 then
