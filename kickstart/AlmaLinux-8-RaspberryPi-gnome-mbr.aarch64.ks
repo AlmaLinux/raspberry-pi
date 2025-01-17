@@ -1,12 +1,12 @@
 # Basic setup information
-url --url="https://repo.almalinux.org/almalinux/8/BaseOS/aarch64/os/"
+url --mirrorlist="https://mirrors.almalinux.org/mirrorlist/8/baseos"
 # root password is locked but can be reset by cloud-init later
 rootpw --plaintext --lock almalinux
 
 # Repositories to use
-repo --name="baseos"    --baseurl=https://repo.almalinux.org/almalinux/8/BaseOS/aarch64/os/
-repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/8/AppStream/aarch64/os/
-repo --name="raspberrypi" --baseurl=https://repo.almalinux.org/almalinux/8/raspberrypi/aarch64/os/
+repo --name="baseos"      --mirrorlist="https://mirrors.almalinux.org/mirrorlist/8/baseos"
+repo --name="appstream"   --mirrorlist="https://mirrors.almalinux.org/mirrorlist/8/appstream"
+repo --name="raspberrypi" --mirrorlist="https://mirrors.almalinux.org/mirrorlist/8/raspberrypi"
 
 # install
 keyboard us --xlayouts=us --vckeymap=us
