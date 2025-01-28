@@ -48,6 +48,9 @@ raspberrypi-userland
 raspberrypi2-firmware
 raspberrypi2-kernel4
 raspberrypi2-kernel4-tools
+raspberrypi2-kernel4-modules
+raspberrypi2-kernel4-modules-core
+raspberrypi2-kernel4-modules-extra
 nano
 libgpiod-utils
 %end
@@ -55,7 +58,7 @@ libgpiod-utils
 %post
 # Mandatory README file
 cat >/boot/README.txt << EOF
-== AlmaLinux 10 Kitten ==
+== AlmaLinux Kitten 10 ==
 
 To login to Raspberry Pi via SSH, you need to register SSH public key *before*
 inserting SD card to Raspberry Pi. Edit user-data file and put SSH public key
