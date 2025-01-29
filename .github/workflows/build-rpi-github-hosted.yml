@@ -106,12 +106,14 @@ jobs:
         [ "x${release}" != "x" ] && echo "full_release_version=${release}" >> $GITHUB_ENV
         [ "x${version_major}" != "x" ] && echo "version_major=${version_major}" >> $GITHUB_ENV
         [ "x${version_minor}" != "x" ] && echo "version_minor=${version_minor}" >> $GITHUB_ENV
+        # Use AlmaLinux 9 to build images since appliance-tools not available in 10 yet
+        container_version=9
         [ "x${container_version}" != "x" ] && echo "container_version=${container_version}" >> $GITHUB_ENV
 
     - name: Prepare some environment stuff
       run: |
         # Path to the python3-imgcreate fs.py
-        case ${{ inputs.version_major }} in
+        case ${{ env.container_version }} in
           8)
             python3_imgcreate=/usr/lib/python3.6/site-packages/imgcreate/
             ;;
