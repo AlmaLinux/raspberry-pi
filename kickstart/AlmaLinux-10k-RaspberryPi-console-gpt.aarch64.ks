@@ -1,12 +1,12 @@
 # Basic setup information
-url --mirrorlist="https://mirrors.almalinux.org/mirrorlist/8/baseos"
+url --mirrorlist="https://kitten.mirrors.almalinux.org/mirrorlist/10-kitten/baseos"
 # root password is locked but can be reset by cloud-init later
 rootpw --plaintext --lock almalinux
 
 # Repositories to use
-repo --name="baseos"      --mirrorlist="https://mirrors.almalinux.org/mirrorlist/8/baseos"
-repo --name="appstream"   --mirrorlist="https://mirrors.almalinux.org/mirrorlist/8/appstream"
-repo --name="raspberrypi" --mirrorlist="https://mirrors.almalinux.org/mirrorlist/8/raspberrypi"
+repo --name="baseos"      --mirrorlist="https://kitten.mirrors.almalinux.org/mirrorlist/10-kitten/baseos"
+repo --name="appstream"   --mirrorlist="https://kitten.mirrors.almalinux.org/mirrorlist/10-kitten/appstream"
+repo --name="raspberrypi" --mirrorlist="https://kitten.mirrors.almalinux.org/mirrorlist/10-kitten/raspberrypi"
 
 # install
 keyboard us --xlayouts=us --vckeymap=us
@@ -14,15 +14,15 @@ timezone --isUtc --nontp UTC
 selinux --enforcing
 firewall --enabled --port=22:tcp
 network --bootproto=dhcp --device=link --activate --onboot=on
-services --enabled=sshd,NetworkManager,chronyd,bluetooth
+services --enabled=sshd,NetworkManager,chronyd,bluetooth,cpupower
 shutdown
-bootloader --location=mbr
+bootloader --location=none
 lang en_US.UTF-8
 
 # Disk setup
-clearpart --initlabel --all
-part /boot --asprimary --fstype=vfat --size=500 --label=boot --ondisk=sda
-part / --asprimary --fstype=ext4 --size=3000 --label=rootfs --ondisk=sda
+clearpart --initlabel --all --disklabel=gpt
+part /boot --fstype=vfat --size=500 --label=cidata --ondisk=sda
+part / --fstype=ext4 --size=2400 --label=rootfs --ondisk=sda
 
 # Package setup
 %packages
@@ -32,27 +32,10 @@ part / --asprimary --fstype=ext4 --size=3000 --label=rootfs --ondisk=sda
 -java-1.6.0-*
 -java-1.7.0-*
 -java-11-*
--kernel-tools
+-kernel-*
 -python*-caribou*
--iwl1000-firmware
--iwl100-firmware
--iwl105-firmware
--iwl135-firmware
--iwl2000-firmware
--iwl2030-firmware
--iwl3160-firmware
--iwl3945-firmware
--iwl4965-firmware
--iwl5000-firmware
--iwl5150-firmware
--iwl6000-firmware
--iwl6000g2a-firmware
--iwl6000g2b-firmware
--iwl6050-firmware
--iwl7260-firmware
 NetworkManager-wifi
 almalinux-release-raspberrypi
-binutils
 bluez
 chrony
 cloud-init
@@ -60,18 +43,22 @@ cloud-utils-growpart
 e2fsprogs
 net-tools
 linux-firmware-raspberrypi
-raspberrypi-userland
 raspberrypi-sys-mods
+raspberrypi-userland
 raspberrypi2-firmware
 raspberrypi2-kernel4
 raspberrypi2-kernel4-tools
+raspberrypi2-kernel4-modules
+raspberrypi2-kernel4-modules-core
+raspberrypi2-kernel4-modules-extra
 nano
+libgpiod-utils
 %end
 
 %post
 # Mandatory README file
 cat >/boot/README.txt << EOF
-== AlmaLinux 8 ==
+== AlmaLinux Kitten 10 ==
 
 To login to Raspberry Pi via SSH, you need to register SSH public key *before*
 inserting SD card to Raspberry Pi. Edit user-data file and put SSH public key
@@ -113,6 +100,7 @@ EOF
 cat > /boot/config.txt << EOF
 # This file is provided as a placeholder for user options
 # AlmaLinux - few default config options
+
 [pi4]
 arm_boost=1
 
@@ -150,11 +138,10 @@ touch /etc/machine-id
 
 %post --nochroot --erroronfail
 
-/usr/sbin/blkid
 LOOPPART=$(cat /proc/self/mounts |/usr/bin/grep '^\/dev\/mapper\/loop[0-9]p[0-9] '"$INSTALL_ROOT " | /usr/bin/sed 's/ .*//g')
 VFATPART=$(cat /proc/self/mounts |/usr/bin/grep '^\/dev\/mapper\/loop[0-9]p[0-9] '"$INSTALL_ROOT"/boot | /usr/bin/sed 's/ .*//g')
 echo "Found loop part for PARTUUID $LOOPPART"
-BOOTDEV=$(/usr/sbin/blkid $LOOPPART|grep 'PARTUUID="........-02"'|sed 's/.*PARTUUID/PARTUUID/g;s/ .*//g;s/"//g')
+BOOTDEV=$(/usr/sbin/blkid $LOOPPART | egrep 'PARTUUID="([0-9a-f]{8})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{12})"' | sed 's/.*PARTUUID/PARTUUID/g;s/ .*//g;s/"//g')
 echo "no chroot selected bootdev=$BOOTDEV"
 if [ -n "$BOOTDEV" ];then
     cat $INSTALL_ROOT/boot/cmdline.txt
@@ -167,6 +154,16 @@ fi
 # This didn't work for some reasons so using fatlabel instead.
 #    part /boot --asprimary --fstype=vfat --mkfsoptions="-n CIDATA"
 /usr/sbin/fatlabel $VFATPART "CIDATA"
+# Kickstart sets the type of a VFAT partition with mountpoint /boot to EF00
+# if a GUID partition table is used, so reset the partition type to 0700.
+VFATPARTNUM=$(echo ${VFATPART} | sed -n 's/.*p\([0-9]\+\)$/\1/p')
+VFATPARTDEV=$(echo ${VFATPART//\/mapper/} | sed 's/p[0-9]*$//')
+if [ -b "${VFATPARTDEV}p${VFATPARTNUM}" -o -b "${VFATPARTDEV}${VFATPARTNUM}" ]; then
+echo /usr/sbin/sgdisk --typecode="${VFATPARTNUM}:0700" ${VFATPARTDEV}
+/usr/sbin/sgdisk --typecode="${VFATPARTNUM}:0700" ${VFATPARTDEV}
+fi
+
+/usr/sbin/sgdisk -p ${VFATPARTDEV}
 
 cat $INSTALL_ROOT/boot/cmdline.txt
 
