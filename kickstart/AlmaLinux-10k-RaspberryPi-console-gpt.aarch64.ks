@@ -21,7 +21,7 @@ lang en_US.UTF-8
 
 # Disk setup
 clearpart --initlabel --all --disklabel=gpt
-part /boot --fstype=vfat --size=300 --label=cidata --ondisk=sda
+part /boot --fstype=vfat --size=500 --label=cidata --ondisk=sda
 part / --fstype=ext4 --size=2400 --label=rootfs --ondisk=sda
 
 # Package setup
