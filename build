@@ -3,6 +3,7 @@
 
 SCRIPT_DIR=$(dirname $(readlink -f $0))
 DATE=$(date +%Y%m%d-%H%M%S)
+SELINUX_STATUS=$(getenforce)
 
 readarray -t VARIANTS < <(ls -1 ${SCRIPT_DIR}/kickstart | sed -e 's|.aarch64.ks||')
 
@@ -35,6 +36,10 @@ then
     exit 1
 fi
 
+if [ "$SELINUX_STATUS" == "Enforcing" ]; then
+    setenforce 0
+fi
+
 sudo appliance-creator \
     -c ${SCRIPT_DIR}/kickstart/${VARIANT}.aarch64.ks \
     -d -v --logfile /var/tmp/${VARIANT}-${DATE}.aarch64.ks.log \
@@ -42,3 +47,6 @@ sudo appliance-creator \
     -o $(pwd) --format raw --name ${VARIANT}-${DATE}.aarch64 | \
     tee /var/tmp/${VARIANT}-${DATE}.aarch64.ks.log.2
 
+if [ "$SELINUX_STATUS" == "Enforcing" ]; then
+    setenforce 1
+fi
