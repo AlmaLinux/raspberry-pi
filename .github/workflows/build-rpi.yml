@@ -34,8 +34,14 @@ on:
         default: '9'
         type: choice
         options:
+          - 10-kitten
           - 9
           - 8
+
+      iteration:
+        description: 'Kitten 10 build iteration'
+        required: true
+        default: '0'
 
       store_as_artifact:
         description: "Store images to the workflow Artifacts"
@@ -76,6 +82,9 @@ jobs:
           # 8 has no GPT image
           - version_major: '8'
             partitioning: 'gpt'
+          # 10-kitten has no MBR image
+          - version_major: '10-kitten'
+            partitioning: 'mbr'
 
     steps:
 
@@ -87,7 +96,8 @@ jobs:
         aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws_region: ${{ secrets.AWS_REGION }}
-        ec2_ami_id: ${{ inputs.version_major == '9' && secrets.EC2_AMI_ID_AL9 || secrets.EC2_AMI_ID_AL8 }}
+        # TODO: EC2_AMI_ID_AL9 (9-th AMI) should be used for Kitten 10 until appliance-tools isn't available
+        ec2_ami_id: ${{ secrets[format('EC2_AMI_ID_AL{0}', ( inputs.version_major == '10-kitten' && '9' || inputs.version_major ))] }}
         ec2_subnet_id: ${{ secrets.EC2_SUBNET_ID}}
         ec2_security_group_id: ${{ secrets.EC2_SECURITY_GROUP_ID }}
 
@@ -119,20 +129,43 @@ jobs:
           # 8 has no GPT image
           - version_major: '8'
             partitioning: 'gpt'
+          # 10-kitten has no MBR image
+          - version_major: '10-kitten'
+            partitioning: 'mbr'
 
     steps:
 
     - uses: actions/checkout@v4
       name: Checkout ${{ github.action_repository }}
 
-    - name: Prepare AlmaLinux Minor version number
+    - name: Set environment variables
       run: |
-        release=$(rpm -q --qf="%{VERSION}\n" https://repo.almalinux.org/almalinux/almalinux-release-latest-${{ inputs.version_major }}.aarch64.rpm 2>/dev/null)
-        version_minor=$(cut -d '.' -f 2 <<< "$release")
-        [ "x${version_minor}" != "x" ] && echo "version_minor=${version_minor}" >> $GITHUB_ENV
+        # Set environment variables
+        version_major=${{ matrix.version_major }}
+        version_minor=
+        code_name_var=${{ matrix.version_major }}
+        kickstart_var=${{ matrix.version_major }}
+        iteration=
 
-    - name: Prepare other stuff
-      run: |
+        case ${{ matrix.version_major }} in
+          10-kitten)
+            version_major=10
+            code_name_var="Kitten"
+            kickstart_var=10k # TODO: this should be 'kitten-10' or '10-kitten'
+            iteration=.${{ inputs.iteration }}
+            release_str="${code_name_var} ${version_major}"
+            ;;
+          *)
+            release_url="https://repo.almalinux.org/almalinux/almalinux-release-latest-${version_major}.aarch64.rpm"
+            release=$(rpm -q --qf="%{VERSION}\n" ${release_url} 2>/dev/null)
+            version_minor=.$(cut -d '.' -f 2 <<< "$release")
+            release_str="${version_major}${version_minor}"
+            ;;
+        esac
+
+        # Release string, 8.10, 9.5 or Kitten 10
+        echo "release_str=${release_str}" >> $GITHUB_ENV
+
         # date stamp
         date_stamp=$(date -u '+%Y%m%d')
         [ "x${date_stamp}" != "x" ] && echo "date_stamp=${date_stamp}" >> $GITHUB_ENV
@@ -147,7 +180,7 @@ jobs:
         echo "need_pkgs=${need_pkgs}" >> $GITHUB_ENV
 
         # Kickstart file name
-        kickstart="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-${{ matrix.image_types }}-${{ matrix.partitioning }}.aarch64.ks"
+        kickstart="AlmaLinux-${kickstart_var}-RaspberryPi-${{ matrix.image_types }}-${{ matrix.partitioning }}.aarch64.ks"
         echo "kickstart=${kickstart}" >> $GITHUB_ENV
 
         # Appliance Tools results directory
@@ -156,8 +189,8 @@ jobs:
         sudo mkdir -p ${rpi_image_resultdir}
 
         # Image file base name
-        image_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-${{ matrix.partitioning }}-${{ inputs.version_major }}.${{ env.version_minor }}-${date_stamp}.aarch64"
-        [ "${{ matrix.image_types }}" = "gnome" ] && image_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-GNOME-${{ matrix.partitioning }}-${{ inputs.version_major }}.${{ env.version_minor }}-${date_stamp}.aarch64"
+        image_name="AlmaLinux-${code_name_var}-RaspberryPi-${{ matrix.partitioning }}-${version_major}${version_minor}-${date_stamp}${iteration}.aarch64"
+        [ "${{ matrix.image_types }}" = "gnome" ] && image_name="AlmaLinux-${code_name_var}-RaspberryPi-GNOME-${{ matrix.partitioning }}-${version_major}${version_minor}-${date_stamp}${iteration}.aarch64"
         echo "image_name=${image_name}" >> $GITHUB_ENV
 
     - name: Generate appliance creator script
@@ -166,7 +199,7 @@ jobs:
         appliance-creator \
         -c kickstart/${{ env.kickstart }} \
         -d -v --logfile ${{ env.rpi_image_resultdir }}/${{ env.image_name }}.log \
-        --cache ./cache8 --no-compress \
+        --cache ./cache --no-compress \
         -o ${{ env.rpi_image_resultdir }} --format raw --name ${{ env.image_name }} | \
         tee ${{ env.rpi_image_resultdir }}/${{ env.image_name }}.log.2
         EOF
@@ -285,7 +318,7 @@ jobs:
         MATTERMOST_CHANNEL: ${{ vars.MATTERMOST_CHANNEL }}
         MATTERMOST_USERNAME: ${{ github.triggering_actor }}
         TEXT: |
-          **AlmaLinux OS ${{ inputs.version_major }}.${{ env.version_minor }} Raspberry Pi image Build** `${{ env.date_time_stamp }}` generated by the GitHub [Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          **AlmaLinux OS ${{ env.release_str }} Raspberry Pi image Build** `${{ env.date_time_stamp }}` generated by the GitHub [Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
           :almalinux: **${{ matrix.image_types }} ${{ matrix.partitioning }}**
 
@@ -301,7 +334,7 @@ jobs:
         MATTERMOST_CHANNEL: ${{ vars.MATTERMOST_CHANNEL }}
         MATTERMOST_USERNAME: ${{ github.triggering_actor }}
         TEXT: |
-          **AlmaLinux OS ${{ inputs.version_major }}.${{ env.version_minor }} Raspberry Pi image Build** `${{ env.date_time_stamp }}` generated by the GitHub [Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          **AlmaLinux OS ${{ env.release_str }} Raspberry Pi image Build** `${{ env.date_time_stamp }}` generated by the GitHub [Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
           :almalinux: **${{ matrix.image_types }} ${{ matrix.partitioning }}**
 
