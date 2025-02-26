@@ -106,9 +106,10 @@ jobs:
         [ "x${release}" != "x" ] && echo "full_release_version=${release}" >> $GITHUB_ENV
         [ "x${version_major}" != "x" ] && echo "version_major=${version_major}" >> $GITHUB_ENV
         [ "x${version_minor}" != "x" ] && echo "version_minor=${version_minor}" >> $GITHUB_ENV
-        # Use AlmaLinux 9 to build images since appliance-tools not available in 10 yet
-        container_version=9
-        [ "x${container_version}" != "x" ] && echo "container_version=${container_version}" >> $GITHUB_ENV
+        # Use AlmaLinux 9 to build 10 images since appliance-tools not available in 10 yet
+        container_version=${version_major}
+        [ "x${container_version}" = "x10" ] && container_version=9
+        echo "container_version=${container_version}" >> $GITHUB_ENV
 
     - name: Prepare some environment stuff
       run: |
