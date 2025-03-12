@@ -26,7 +26,8 @@ then
 fi
 
 VARIANT=${1}
-VER=$(echo $VARIANT | sed -e 's|[^0-9k?]||g')
+VER=$(echo $VARIANT | sed -e 's|[^0-9]||g')
+[[ "${VARIANT}" == *"Kitten"* ]] && VER=10k
 
 if [ ! -f ${SCRIPT_DIR}/kickstart/${VARIANT}.aarch64.ks ]
 then
@@ -48,4 +49,3 @@ sudo appliance-creator \
     --cache ${SCRIPT_DIR}/cache${VER} --no-compress \
     -o $(pwd) --format raw --name ${VARIANT}-${DATE}.aarch64 | \
     tee /var/tmp/${VARIANT}-${DATE}.aarch64.ks.log.2
-
