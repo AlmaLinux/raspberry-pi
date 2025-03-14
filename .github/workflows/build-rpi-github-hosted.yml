@@ -106,9 +106,10 @@ jobs:
         [ "x${release}" != "x" ] && echo "full_release_version=${release}" >> $GITHUB_ENV
         [ "x${version_major}" != "x" ] && echo "version_major=${version_major}" >> $GITHUB_ENV
         [ "x${version_minor}" != "x" ] && echo "version_minor=${version_minor}" >> $GITHUB_ENV
-        # Use AlmaLinux 9 to build images since appliance-tools not available in 10 yet
-        container_version=9
-        [ "x${container_version}" != "x" ] && echo "container_version=${container_version}" >> $GITHUB_ENV
+        # Use AlmaLinux 9 to build 10 images since appliance-tools not available in 10 yet
+        container_version=${version_major}
+        [ "x${container_version}" = "x10" ] && container_version=9
+        echo "container_version=${container_version}" >> $GITHUB_ENV
 
     - name: Prepare some environment stuff
       run: |
@@ -154,8 +155,15 @@ jobs:
         echo "rpi_image_resultdir=${rpi_image_resultdir}" >> $GITHUB_ENV
 
         # Image file base name
-        image_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-${{ matrix.partitioning }}-${{ env.full_release_version }}-${date_stamp}.aarch64"
-        [ "${{ matrix.image_types }}" = "gnome" ] && image_name="AlmaLinux-${{ inputs.version_major }}-RaspberryPi-GNOME-${{ matrix.partitioning }}-${{ env.full_release_version }}-${date_stamp}.aarch64"
+        if [ "x${{ env.kitten }}" = "x" ]; then
+          image_name="AlmaLinux-${{ env.version_major }}-RaspberryPi-${{ matrix.partitioning }}-${{ env.full_release_version }}-${date_stamp}.aarch64"
+          [ "${{ matrix.image_types }}" = "gnome" ] && image_name="AlmaLinux-${{ env.version_major }}-RaspberryPi-GNOME-${{ matrix.partitioning }}-${{ env.full_release_version }}-${date_stamp}.aarch64"
+        else
+          # Kitten
+          image_name="AlmaLinux-Kitten-RaspberryPi-${{ matrix.partitioning }}-${{ env.version_major }}-${date_stamp}.aarch64"
+          # Kitten GNOME
+          [ "${{ matrix.image_types }}" = "gnome" ] && image_name="AlmaLinux-Kitten-RaspberryPi-GNOME-${{ matrix.partitioning }}-${{ env.version_major }}-${date_stamp}.aarch64"
+        fi
         echo "image_name=${image_name}" >> $GITHUB_ENV
 
     - name: Install KVM and libvirt packages
