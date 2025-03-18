@@ -151,7 +151,7 @@ jobs:
           10-kitten)
             version_major=10
             code_name_var="Kitten"
-            kickstart_var=10k # TODO: this should be 'kitten-10' or '10-kitten'
+            kickstart_var="${code_name_var}-${version_major}"
             iteration=.${{ inputs.iteration }}
             release_str="${code_name_var} ${version_major}"
             ;;
