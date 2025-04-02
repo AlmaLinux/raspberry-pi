@@ -69,12 +69,14 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       actions: write
+    # Skip if 8 and GPT or Kitten and MBR
+    if: ${{ ( inputs.gpt && inputs.version_major != '8' || inputs.mbr && inputs.version_major != '10-kitten' ) && ( inputs.console || inputs.gnome ) && ( inputs.mbr || inputs.gpt ) }}
     strategy:
       fail-fast: false
       matrix:
         # Set matrix based on boolean inputs.* with true value
-        image_types: ${{ fromJSON(format('["{0}", "{1}"]', ( inputs.console && 'console' ), ( inputs.gnome && 'gnome' ) )) }}
-        partitioning: ${{ fromJSON(format('["{0}", "{1}"]', ( inputs.mbr && 'mbr' ), ( inputs.gpt && 'gpt' ) )) }}
+        image_types: ${{ fromJSON(format('["{0}", "{1}"]', inputs.console && 'console' || 'false', inputs.gnome && 'gnome' || 'false' )) }}
+        partitioning: ${{ fromJSON(format('["{0}", "{1}"]', inputs.mbr && 'mbr' || 'false', inputs.gpt && 'gpt' || 'false' )) }}
         version_major: ${{ fromJSON(format('["{0}"]', inputs.version_major )) }}
         exclude:
           - image_types: 'false'
@@ -120,8 +122,8 @@ jobs:
       # max-parallel: 1
       matrix:
         # Set matrix based on boolean inputs.* with true value
-        image_types: ${{ fromJSON(format('["{0}", "{1}"]', ( inputs.console && 'console' ), ( inputs.gnome && 'gnome' ) )) }}
-        partitioning: ${{ fromJSON(format('["{0}", "{1}"]', ( inputs.mbr && 'mbr' ), ( inputs.gpt && 'gpt' ) )) }}
+        image_types: ${{ fromJSON(format('["{0}", "{1}"]', inputs.console && 'console' || 'false', inputs.gnome && 'gnome' || 'false' )) }}
+        partitioning: ${{ fromJSON(format('["{0}", "{1}"]', inputs.mbr && 'mbr' || 'false', inputs.gpt && 'gpt' || 'false' )) }}
         version_major: ${{ fromJSON(format('["{0}"]', inputs.version_major )) }}
         exclude:
           - image_types: 'false'
