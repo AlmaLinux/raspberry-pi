@@ -2,18 +2,34 @@
 
 [![asciicast](https://asciinema.org/a/423618.svg)](https://asciinema.org/a/423618)
 
-Last Update 2024-06-27: [Changelog](#changelog) below.
+See below for [Changelog](#changelog).
 
 This repository is the home of the Official AlmaLinux Raspberry Pi Image.
 
 Images made possible by the incredible work contributed by the immortal [Pablo Greco](https://github.com/psgreco), [Mark Verlinde](https://github.com/markVnl), [Fabian Arrotin](https://github.com/arrfab) and [Koichiro Iwao](https://github.com/metalefty).
 
-### Tested hardware:
-* Raspberry Pi 5 
-* Raspberry Pi 4 Model B
-* Raspberry Pi 400
-* Raspberry Pi 3 Model B+
-* Raspberry Pi 3 Model A+
+### Tested hardware
+
+|Model |8|9|Kitten 10|
+|-|-|-|-|
+|Pi 5|✓|✓|✓|
+|Pi 500|?|?|?|
+|Pi 4 Model B|✓|✓|✓|
+|Pi 400|✓|✓|✓|
+|Pi 3 Model B+|✓|✓|⛔|
+|Pi 3 Model A+|✓|✓|⛔|
+
+- ✓: Tested
+- ?: Not Tested
+- ⛔: No Longer Supported
+
+### Available Parition Types
+
+|Version|MBR|GPT|
+|-|-|-|
+|8|✓||
+|9|✓|✓|
+|Kitten 10||✓|
 
 ## AlmaLinux Raspberry Pi Quick Start
 
@@ -31,6 +47,12 @@ Please file any bugs on https://bugs.almalinux.org and feel free to discuss on o
 Full guide for AlmaLinux on Raspberry Pi is available here: https://wiki.almalinux.org/documentation/raspberry-pi
 
 ## Changelog
+
+### 2025-02-25
+- Run SELinux auto-relabel at first boot
+
+### 2025-02-14
+- Add AlmaLinux Kitten 10
 
 ### 2024-11-21
 - Add new images with GUID partition table for AL9
