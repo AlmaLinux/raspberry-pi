@@ -320,7 +320,8 @@ jobs:
     - name: Run vagrant up
       run: |
         # TODO to solve "undefined method `exists?'" error
-        sudo sed -i 's/exists?/exist?/g' /root/.vagrant.d/gems/3.3.6/gems/dotenv-0.11.1/lib/dotenv.rb
+        ruby_version=$(sudo /opt/vagrant/embedded/bin/ruby -e 'print "#{ RUBY_VERSION }"')
+        sudo find /root/.vagrant.d/gems/${ruby_version}/gems -name dotenv.rb -exec sed -i 's/exists?/exist?/g' {} \;
 
         sudo vagrant up fedora
 
