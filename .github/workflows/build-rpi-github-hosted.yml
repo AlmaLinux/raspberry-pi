@@ -356,7 +356,7 @@ jobs:
         sudo vagrant ssh fedora -c "sudo sh -c 'test -f /etc/docker/daemon.json && jq -f /vagrant/data-root.jq /etc/docker/daemon.json > ./daemon.json.${{ env.date_stamp }} || jq -n -f /vagrant/data-root.jq > ./daemon.json.${{ env.date_stamp }}; mv -f ./daemon.json.${{ env.date_stamp }} /etc/docker/daemon.json'"
         sudo vagrant ssh fedora -c "sudo mv /var/lib/docker ${{ env.rpi_image_resultdir  }}"
         sudo vagrant ssh fedora -c "sudo systemctl start docker"
-        sudo vagrant ssh fedora -c "docker info -f '{{ .DockerRootDir}}'"
+        sudo vagrant ssh fedora -c "sudo docker info -f '{{ .DockerRootDir}}'"
 
         # # Use containerd image store
         # sudo vagrant ssh fedora -c "sudo sh -c 'test -f /etc/docker/daemon.json && jq -f /vagrant/containerd-snapshotter.jq /etc/docker/daemon.json > ./daemon.json.${{ env.date_stamp }} || jq -n -f /vagrant/containerd-snapshotter.jq > ./daemon.json.${{ env.date_stamp }}; mv -f ./daemon.json.${{ env.date_stamp }} /etc/docker/daemon.json'"
