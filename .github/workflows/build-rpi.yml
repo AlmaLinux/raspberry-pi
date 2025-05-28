@@ -70,8 +70,8 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       actions: write
-    # Skip if 8 and GPT or Kitten and MBR
-    if: ${{ ( inputs.gpt && inputs.version_major != '8' || inputs.mbr && inputs.version_major != '10-kitten' ) && ( inputs.console || inputs.gnome ) && ( inputs.mbr || inputs.gpt ) }}
+    # Skip if 8-GPT, 10-Kitten-MBR, 10-MBR
+    if: ${{ ( inputs.gpt && inputs.version_major != '8' ) || ( inputs.mbr && inputs.version_major != '10-kitten' &&  inputs.version_major != '10' ) && ( inputs.console || inputs.gnome ) && ( inputs.mbr || inputs.gpt ) }}
     strategy:
       fail-fast: false
       matrix:
@@ -103,7 +103,7 @@ jobs:
         aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws_region: ${{ secrets.AWS_REGION }}
         # TODO: EC2_AMI_ID_AL9 (9-th AMI) should be used for Kitten 10 until appliance-tools isn't available
-        ec2_ami_id: ${{ secrets[format('EC2_AMI_ID_AL{0}', ( inputs.version_major == '10-kitten' && '9' || inputs.version_major ))] }}
+        ec2_ami_id: ${{ secrets[format('EC2_AMI_ID_AL{0}', ( ( inputs.version_major == '10-kitten' || inputs.version_major == '10' ) && '9' || inputs.version_major ))] }}
         ec2_subnet_id: ${{ secrets.EC2_SUBNET_ID}}
         ec2_security_group_id: ${{ secrets.EC2_SECURITY_GROUP_ID }}
 
