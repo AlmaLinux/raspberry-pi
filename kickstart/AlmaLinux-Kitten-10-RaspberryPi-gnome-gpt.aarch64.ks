@@ -34,11 +34,8 @@ dejavu-sans-mono-fonts
 dejavu-serif-fonts
 #aajohan-comfortaa-fonts
 #abattis-cantarell-fonts
--caribou*
 -gnome-shell-browser-plugin
--java-1.6.0-*
--java-1.7.0-*
--java-11-*
+-java-21-*
 -kernel-*
 NetworkManager-wifi
 almalinux-release-raspberrypi
