@@ -27,13 +27,12 @@ part / --fstype=ext4 --size=2400 --label=rootfs --ondisk=sda
 # Package setup
 %packages
 @core
--caribou*
 -gnome-shell-browser-plugin
--java-1.6.0-*
--java-1.7.0-*
+-java-1.8.0-*
 -java-11-*
+-java-17-*
+-java-21-*
 -kernel-tools
--python*-caribou*
 NetworkManager-wifi
 almalinux-release-raspberrypi
 bluez

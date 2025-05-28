@@ -34,13 +34,11 @@ dejavu-sans-mono-fonts
 dejavu-serif-fonts
 aajohan-comfortaa-fonts
 abattis-cantarell-fonts
--caribou*
 -gnome-shell-browser-plugin
 -java-1.6.0-*
 -java-1.7.0-*
 -java-11-*
--kernel-tools
--python*-caribou*
+-kernel-*
 -iwl1000-firmware
 -iwl100-firmware
 -iwl105-firmware
@@ -59,8 +57,8 @@ abattis-cantarell-fonts
 -iwl7260-firmware
 NetworkManager-wifi
 almalinux-release-raspberrypi
-bluez
 binutils
+bluez
 chrony
 cloud-init
 cloud-utils-growpart

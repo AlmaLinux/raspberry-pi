@@ -34,7 +34,6 @@ dejavu-sans-mono-fonts
 dejavu-serif-fonts
 #aajohan-comfortaa-fonts
 #abattis-cantarell-fonts
--caribou*
 -gnome-shell-browser-plugin
 -java-21-*
 -kernel-*

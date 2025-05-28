@@ -27,13 +27,11 @@ part / --asprimary --fstype=ext4 --size=3000 --label=rootfs --ondisk=sda
 # Package setup
 %packages
 @core
--caribou*
 -gnome-shell-browser-plugin
 -java-1.6.0-*
 -java-1.7.0-*
 -java-11-*
--kernel-tools
--python*-caribou*
+-kernel-*
 -iwl1000-firmware
 -iwl100-firmware
 -iwl105-firmware
@@ -60,8 +58,8 @@ cloud-utils-growpart
 e2fsprogs
 net-tools
 linux-firmware-raspberrypi
-raspberrypi-userland
 raspberrypi-sys-mods
+raspberrypi-userland
 raspberrypi2-firmware
 raspberrypi2-kernel4
 raspberrypi2-kernel4-tools
