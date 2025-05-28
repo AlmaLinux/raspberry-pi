@@ -71,7 +71,7 @@ jobs:
     permissions:
       actions: write
     # Skip if 8-GPT, 10-Kitten-MBR, 10-MBR
-    if: ${{ ( inputs.gpt && inputs.version_major != '8' ) || ( inputs.mbr && inputs.version_major != '10-kitten' &&  inputs.version_major != '10' ) && ( inputs.console || inputs.gnome ) && ( inputs.mbr || inputs.gpt ) }}
+    if: ${{ ( (inputs.gpt && inputs.version_major != '8') || (inputs.mbr && inputs.version_major != '10-kitten' && inputs.version_major != '10')) && (inputs.console || inputs.gnome) && (inputs.mbr || inputs.gpt) }}
     strategy:
       fail-fast: false
       matrix:
