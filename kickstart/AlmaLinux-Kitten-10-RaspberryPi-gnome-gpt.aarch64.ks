@@ -121,7 +121,7 @@ EOF
 
 # Kernel command line string
 cat > /boot/cmdline.txt << EOF
-console=ttyS0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait
+console=serial0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait
 EOF
 
 # Create and initialize swapfile
