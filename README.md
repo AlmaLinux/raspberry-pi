@@ -49,6 +49,9 @@ Full guide for AlmaLinux on Raspberry Pi is available here: https://wiki.almalin
 
 ## Changelog
 
+### 2025-05-30
+- Fix Bluetooth was not working on AlmaLinux 9, 10, Kitten 10 GPT images
+
 ### 2025-05-28
 - Add AlmaLinux 10
 
