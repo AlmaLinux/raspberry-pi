@@ -10,7 +10,7 @@ Images made possible by the incredible work contributed by the immortal [Pablo G
 
 ### Tested hardware
 
-|Model |8|9|Kitten 10||
+|Model |8|9|Kitten 10|10|
 |-|-|-|-|-|
 |Pi 5|✓|✓|✓|✓|
 |Pi 500|?|?|?|?|
