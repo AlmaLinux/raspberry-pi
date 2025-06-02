@@ -10,7 +10,7 @@ Images made possible by the incredible work contributed by the immortal [Pablo G
 
 ### Tested hardware
 
-|Model |8|9|Kitten 10||
+|Model |8|9|Kitten 10|10|
 |-|-|-|-|-|
 |Pi 5|✓|✓|✓|✓|
 |Pi 500|?|?|?|?|
@@ -48,6 +48,9 @@ Please file any bugs on https://bugs.almalinux.org and feel free to discuss on o
 Full guide for AlmaLinux on Raspberry Pi is available here: https://wiki.almalinux.org/documentation/raspberry-pi
 
 ## Changelog
+
+### 2025-05-30
+- Fix Bluetooth was not working on AlmaLinux 9, 10, Kitten 10 GPT images
 
 ### 2025-05-28
 - Add AlmaLinux 10

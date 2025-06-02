@@ -34,13 +34,12 @@ dejavu-sans-mono-fonts
 dejavu-serif-fonts
 aajohan-comfortaa-fonts
 abattis-cantarell-fonts
--caribou*
 -gnome-shell-browser-plugin
--java-1.6.0-*
--java-1.7.0-*
+-java-1.8.0-*
 -java-11-*
+-java-17-*
+-java-21-*
 -kernel-tools
--python*-caribou*
 NetworkManager-wifi
 almalinux-release-raspberrypi
 bluez
@@ -122,7 +121,7 @@ EOF
 
 # Kernel command line string
 cat > /boot/cmdline.txt << EOF
-console=ttyS0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait
+console=serial0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait
 EOF
 
 # Create and initialize swapfile
