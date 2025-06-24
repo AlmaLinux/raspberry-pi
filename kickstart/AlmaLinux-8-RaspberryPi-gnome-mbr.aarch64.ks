@@ -1,4 +1,5 @@
 # Basic setup information
+
 url --mirrorlist="https://mirrors.almalinux.org/mirrorlist/8/baseos"
 # root password is locked but can be reset by cloud-init later
 rootpw --plaintext --lock almalinux
@@ -119,6 +120,7 @@ cat > /boot/config.txt << EOF
 # This file is provided as a placeholder for user options
 # AlmaLinux - few default config options for better graphics support
 [all]
+auto_initramfs=1
 disable_overscan=1
 dtoverlay=vc4-kms-v3d
 camera_auto_detect=0
