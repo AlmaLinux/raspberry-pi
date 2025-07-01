@@ -96,6 +96,8 @@ EOF
 cat > /boot/config.txt << EOF
 # This file is provided as a placeholder for user options
 # AlmaLinux - few default config options
+[all]
+auto_initramfs=1
 
 [pi4]
 arm_boost=1
