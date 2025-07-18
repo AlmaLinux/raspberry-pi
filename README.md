@@ -51,7 +51,7 @@ Full guide for AlmaLinux on Raspberry Pi is available here: https://wiki.almalin
 ## Changelog
 
 ### 2025-07-17
-- Support for Raspberry Pi 3B has been enhanced due to @FingerlessGlov3s 's substantial contributions
+- Support for Raspberry Pi 3B has been enhanced due to [@FingerlessGlov3s](https://github.com/FingerlessGlov3s)' substantial contributions
 
 ### 2025-06-24
 - Use auto_initramfs for XFS / LUKS
