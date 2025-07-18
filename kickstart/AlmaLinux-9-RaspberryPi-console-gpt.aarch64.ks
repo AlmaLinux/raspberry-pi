@@ -42,6 +42,7 @@ cloud-utils-growpart
 e2fsprogs
 net-tools
 linux-firmware-raspberrypi
+linux-firmware-raspberrypi-rpi3
 raspberrypi-sys-mods
 raspberrypi-userland
 raspberrypi2-firmware
