@@ -18,6 +18,7 @@ Images made possible by the incredible work contributed by the immortal [Pablo G
 |Pi 400|✓|✓|✓|✓|
 |Pi 3 Model B+|✓|✓|⛔|⛔|
 |Pi 3 Model A+|✓|✓|⛔|⛔|
+|Pi 3 Model B|✓|✓|⛔|⛔|
 
 - ✓: Tested
 - ?: Not Tested
@@ -48,6 +49,9 @@ Please file any bugs on https://bugs.almalinux.org and feel free to discuss on o
 Full guide for AlmaLinux on Raspberry Pi is available here: https://wiki.almalinux.org/documentation/raspberry-pi
 
 ## Changelog
+
+### 2025-07-17
+- Support for Raspberry Pi 3B has been enhanced due to @FingerlessGlov3s 's substantial contributions
 
 ### 2025-06-24
 - Use auto_initramfs for XFS / LUKS
