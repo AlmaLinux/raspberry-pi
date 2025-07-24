@@ -94,6 +94,28 @@ jobs:
 
     steps:
 
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4.0.2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Get AlmaLinux ${{ inputs.version_major }} aarch64 AMI most recent ID
+      run: |
+        os_version="${{ inputs.version_major }}"
+        if [[ "${os_version}" == "10-kitten" ]]; then
+          os_version="Kitten 10"
+        fi
+        AMI_ID=$(aws ec2 describe-images --owners 764336703387 --query "Images | max_by(@, &CreationDate) | ImageId" --filters "Name=name,Values=AlmaLinux OS ${os_version}*aarch64" --region ${{ secrets.AWS_REGION }} --output text)
+        if [[ "${AMI_ID}" == "" || "${AMI_ID}" == "None" ]]; then
+          echo "[Error] Failed to get AMI ID for AlmaLinux ${os_version} aarch64."
+          exit 1
+        else
+          echo "[Debug] AMI ID: '${AMI_ID}'"
+        fi
+        echo "AMI_ID=${AMI_ID}" >> $GITHUB_ENV
+
     - name: Setup and start the runner
       id: start-ec2-runner
       uses: NextChapterSoftware/ec2-action-builder@v1.5
@@ -103,7 +125,7 @@ jobs:
         aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws_region: ${{ secrets.AWS_REGION }}
         # TODO: EC2_AMI_ID_AL9 (9-th AMI) should be used for Kitten 10 until appliance-tools isn't available
-        ec2_ami_id: ${{ secrets[format('EC2_AMI_ID_AL{0}', ( ( inputs.version_major == '10-kitten' || inputs.version_major == '10' ) && '9' || inputs.version_major ))] }}
+        ec2_ami_id: ${{ env.AMI_ID }}
         ec2_subnet_id: ${{ secrets.EC2_SUBNET_ID}}
         ec2_security_group_id: ${{ secrets.EC2_SECURITY_GROUP_ID }}
 
