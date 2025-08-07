@@ -10,7 +10,7 @@ repo --name="raspberrypi" --mirrorlist="https://kitten.mirrors.almalinux.org/mir
 
 # install
 keyboard us --xlayouts=us --vckeymap=us
-timezone --isUtc --nontp UTC
+timezone --utc UTC
 selinux --enforcing
 firewall --enabled --port=22:tcp
 network --bootproto=dhcp --device=link --activate --onboot=on
