@@ -124,9 +124,8 @@ jobs:
         # Release string, 8.10, 9.5 or Kitten 10
         echo "release_str=${release_str}" >> $GITHUB_ENV
 
-        # Use AlmaLinux 9 to build 10 images since appliance-tools not available in 10 yet
+        # Build 8 on 8, 9 on 9, 10 an 10-kitten on 10
         container_version=${version_major}
-        [ "x${container_version}" = "x10" ] && container_version=9
         echo "container_version=${container_version}" >> $GITHUB_ENV
 
         # Path to the python3-imgcreate fs.py
