@@ -1,5 +1,13 @@
 name: Build Raspberry Pi images (GitHub hosted runner)
 
+run-name: >-
+  ${{ format('Build AlmaLinux {0} Raspberry Pi{1}{2}{3}{4} images',
+                inputs.version_major == '10-kitten' && 'Kitten 10' || inputs.version_major,
+                inputs.console && ' console' || '',
+                inputs.gnome && ' GNOME' || '',
+                inputs.mbr && ' MBR' || '',
+                inputs.gpt && ' GPT' || '') }}
+
 on:
   workflow_dispatch:
     inputs:
@@ -60,7 +68,7 @@ on:
         description: "Send notification to Mattermost"
         required: true
         type: boolean
-        default: false
+        default: true
 
 jobs:
   build-image:
@@ -466,7 +474,7 @@ jobs:
 
     - name: Put S3 Bucket download URLs
       if: steps.publish-to-s3.outcome == 'success' && inputs.upload_to_s3
-      uses: actions/github-script@v7
+      uses: actions/github-script@v9
       with:
         result-encoding: string
         script: |
